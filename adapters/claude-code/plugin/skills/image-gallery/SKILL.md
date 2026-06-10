@@ -1,11 +1,11 @@
 ---
 name: image-gallery
-description: Use when the user wants to see the images from this conversation — screenshots, images you Read or Wrote, generated pictures. Opens lazytmux's image carousel (preview + filmstrip) in a tmux split for the current pane.
+description: Use when the user wants to see the images from this conversation — screenshots, images you Read or Wrote, generated pictures. Opens the agent-carousel image carousel (preview + filmstrip) in a tmux split for the current pane.
 ---
 
 # Image Gallery
 
-lazytmux captures every image this Claude Code pane touches (Read / Write /
+The agent-carousel plugin captures every image this Claude Code pane touches (Read / Write /
 screenshot tools) into a per-pane manifest, and renders them as a browsable
 **carousel** — a big preview of the selected image plus a filmstrip of
 thumbnails — in a tmux split pane.
@@ -29,8 +29,8 @@ Run it again to close. The user can also open it themselves with `prefix + I`.
 
 ## Requirements
 
-- Runs only inside tmux with lazytmux installed (the `tmux-claude-images`
-  command is on PATH there). If the command isn't found, lazytmux isn't active —
-  don't try to substitute another tool.
+- Runs only inside tmux with the agent-carousel viewer on PATH (the
+  `tmux-claude-images` command). If the command isn't found, the viewer isn't
+  installed — don't try to substitute another tool.
 - Full-fidelity preview needs a kitty-graphics terminal (kitty/ghostty);
   elsewhere it falls back to `chafa` block-art.
