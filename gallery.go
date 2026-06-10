@@ -85,7 +85,7 @@ type galleryModel struct {
 	backend gridBackend
 	theme   string
 	l       layout
-	cursor  int      // selected image index
+	cursor  int // selected image index
 	width   int
 	height  int
 	tty     *os.File // raw graphics sink (bypasses bubbletea's stdout)

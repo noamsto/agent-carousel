@@ -1,0 +1,5 @@
+[default.extend-words]
+# tmux catppuccin option prefix (@thm_mauve, @thm_surface_1, …) — not a typo.
+thm = "thm"
+# Go standard adjective; both spellings exist but the codebase predates this check.
+unparseable = "unparseable"
