@@ -141,6 +141,15 @@ func (m *galleryModel) reload() {
 	if m.ready {
 		m.l = computeLayout(m.width, m.height)
 		m.transmitView()
+		// Pre-warm transcodes for every image so navigating to a freshly
+		// captured one is a cache hit, not a full-resolution decode on the loop.
+		if m.backend == backendKitty {
+			paths := make([]string, len(m.images))
+			for i, im := range m.images {
+				paths[i] = im.Path
+			}
+			warmCacheAsync(paths, m.l.previewW, m.l.previewH, m.l.stripW, m.l.stripH)
+		}
 	}
 }
 

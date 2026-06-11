@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"golang.org/x/image/draw"
 
@@ -69,6 +70,32 @@ func cachedPNG(srcPath string, cols, rows int) string {
 	dst := image.NewRGBA(image.Rect(0, 0, int(float64(b.Dx())*scale), int(float64(b.Dy())*scale)))
 	draw.CatmullRom.Scale(dst, dst.Bounds(), src, b, draw.Src, nil)
 	return writePNG(out, dst, srcPath)
+}
+
+// warmGate serializes warm passes so overlapping reloads don't transcode the
+// same image concurrently. Queued passes are near-instant (already-warm sizes
+// short-circuit), so this bounds duplicate work without dropping the latest.
+var warmGate sync.Mutex
+
+// warmCacheAsync runs warmCache in a goroutine, off the bubbletea loop.
+func warmCacheAsync(paths []string, previewW, previewH, stripW, stripH int) {
+	go func() {
+		warmGate.Lock()
+		defer warmGate.Unlock()
+		warmCache(paths, previewW, previewH, stripW, stripH)
+	}()
+}
+
+// warmCache transcodes each path at the preview and strip cell sizes so a
+// post-capture navigation hits the cache instead of decoding the full-resolution
+// original on the bubbletea loop. cachedPNG is idempotent and concurrency-safe
+// (atomic temp+rename), so already-warm sizes short-circuit and a warm racing a
+// concurrent transmitView is harmless.
+func warmCache(paths []string, previewW, previewH, stripW, stripH int) {
+	for _, p := range paths {
+		cachedPNG(p, previewW, previewH)
+		cachedPNG(p, stripW, stripH)
+	}
 }
 
 // writePNG encodes img to out atomically (temp file + rename) and returns out,
