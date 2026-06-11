@@ -12,7 +12,7 @@ The viewer reads a per-key manifest at
   {"type":"image","path":"/abs/path.png","source":"Read","ts":"2026-06-10T12:00:00+0000","mtime":1717977600}
   ```
 
-  - `path` — absolute path to an image file (png/jpe?g/gif/webp/bmp).
+  - `path` — absolute path to an image file (png/jpg/jpeg/gif/webp/bmp).
   - `source` — free-form producer tag (the agent's tool name, e.g. `Read`/`Write`).
   - `ts` — ISO-8601 capture time.
   - `mtime` — source file mtime (epoch seconds), used for dedup.

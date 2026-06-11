@@ -4,7 +4,7 @@
 # Mirrors claude-status-update.sh — self-contained, keyed by $TMUX_PANE or $CLAUDE_CODE_SESSION_ID.
 set -euo pipefail
 
-STATE_DIR="${CLAUDE_STATUS_DIR:-/tmp/claude-status}"
+STATE_DIR="${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
 IMAGES_DIR="$STATE_DIR/images"
 
 # Key by tmux pane when inside tmux, else the Claude Code session id so the

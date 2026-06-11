@@ -75,6 +75,14 @@ run_app() { # $1 = fixture name
 	[ "$output" = "$IMG" ]
 }
 
+@test "AGENT_CAROUSEL_DIR takes precedence over CLAUDE_STATUS_DIR" {
+	# CLAUDE_STATUS_DIR is already exported by setup(); set the override too.
+	export AGENT_CAROUSEL_DIR="$BATS_TEST_TMPDIR/carousel"
+	run_app hook-read-image.json
+	[ -f "$AGENT_CAROUSEL_DIR/images/7.jsonl" ]
+	[ ! -f "$MANIFEST" ]
+}
+
 # Renderer selection is Go (chooseGridBackend, tested in gallery_test.go).
 
 @test "Phase-2 ignores an over-long path-like string (regex DoS guard)" {
