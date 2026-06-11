@@ -5,7 +5,8 @@
 #     Keyed by $TMUX_PANE.
 #   - Outside tmux, in kitty with remote control: toggle a split window via
 #     `kitty @ launch`. Keyed by $CLAUDE_CODE_SESSION_ID.
-# The carousel binary (@picker_generate@) and manifest format are shared.
+# The carousel binary ($AGENT_CAROUSEL_BIN, default `agent-carousel` on PATH)
+# and manifest format are shared.
 set -euo pipefail
 
 STATE_DIR="${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
@@ -38,7 +39,7 @@ launch_tmux() {
 		return
 	fi
 	local viewer
-	viewer="$(tmux split-window -h -P -F '#{pane_id}' "@picker_generate@ '$KEY'")"
+	viewer="$(tmux split-window -h -P -F '#{pane_id}' "${AGENT_CAROUSEL_BIN:-agent-carousel} '$KEY'")"
 	tmux set-option -p -t "$viewer" @claude_img_src "$KEY"
 }
 
@@ -52,7 +53,7 @@ launch_kitty() {
 	kitty @ launch --type=window --var claude_img_src="$KEY" \
 		--env AGENT_CAROUSEL_DIR="$STATE_DIR" \
 		--env CLAUDE_STATUS_DIR="$STATE_DIR" \
-		@picker_generate@ "$KEY" >/dev/null
+		"${AGENT_CAROUSEL_BIN:-agent-carousel}" "$KEY" >/dev/null
 }
 
 main() {

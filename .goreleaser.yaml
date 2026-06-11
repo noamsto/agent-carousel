@@ -1,0 +1,23 @@
+version: 2
+builds:
+  - id: agent-carousel
+    main: .
+    binary: agent-carousel
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+archives:
+  - # prebuilt binaries for `go install`-free users; bundles the toggle script
+    # so the archive has both PATH entrypoints (viewer + tmux-claude-images)
+    name_template: "agent-carousel_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    files:
+      - src: scripts/tmux-claude-images.sh
+        dst: tmux-claude-images
+        info:
+          mode: 0755
+checksum:
+  name_template: checksums.txt

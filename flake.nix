@@ -39,7 +39,7 @@
           inherit (config.pre-commit) shellHook;
           packages =
             config.pre-commit.settings.enabledPackages
-            ++ [pkgs.go pkgs.gopls pkgs.gotools pkgs.golangci-lint pkgs.chafa pkgs.bats];
+            ++ [pkgs.go pkgs.gopls pkgs.gotools pkgs.golangci-lint pkgs.chafa pkgs.bats pkgs.goreleaser pkgs.gh];
         };
 
         packages = {
@@ -56,12 +56,12 @@
             };
           };
 
-          # The dual-mode toggle with the binary path baked in (no @placeholder@).
+          # The dual-mode toggle. runtimeInputs puts `agent-carousel` on PATH,
+          # which the script invokes by default (AGENT_CAROUSEL_BIN override).
           toggle = pkgs.writeShellApplication {
             name = "tmux-claude-images";
             runtimeInputs = [self'.packages.default];
-            text = builtins.replaceStrings ["@picker_generate@"] ["agent-carousel"]
-              (builtins.readFile ./scripts/tmux-claude-images.sh);
+            text = builtins.readFile ./scripts/tmux-claude-images.sh;
           };
         };
 
