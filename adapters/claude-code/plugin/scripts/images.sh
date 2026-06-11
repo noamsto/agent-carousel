@@ -12,6 +12,9 @@ IMAGES_DIR="$STATE_DIR/images"
 pane_id="${TMUX_PANE:-${CLAUDE_CODE_SESSION_ID:-}}"
 [[ -n $pane_id ]] || exit 0
 pane_file="${pane_id#%}"
+# Guard against path traversal: the key becomes a filename; reject anything
+# with path separators or outside a safe set (panes are %<int>, sessions are ids).
+[[ $pane_file =~ ^[A-Za-z0-9_@:.-]+$ ]] || exit 0
 
 payload="$(cat)"
 [[ -n $payload ]] || exit 0

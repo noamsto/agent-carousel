@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Open the Claude image carousel for the invoking session.
-#   - Inside tmux: toggle a split pane (bound to prefix+I; also runnable by
-#     Claude via a Bash call). Keyed by $TMUX_PANE.
+#   - Inside tmux: toggle a split pane (runnable by Claude via a Bash call;
+#     also bound to prefix+I if the host tmux config provides that bind).
+#     Keyed by $TMUX_PANE.
 #   - Outside tmux, in kitty with remote control: toggle a split window via
 #     `kitty @ launch`. Keyed by $CLAUDE_CODE_SESSION_ID.
 # The carousel binary (@picker_generate@) and manifest format are shared.
 set -euo pipefail
 
-STATE_DIR="${CLAUDE_STATUS_DIR:-/tmp/claude-status}"
+STATE_DIR="${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
 IMAGES_DIR="$STATE_DIR/images"
 
 # resolve_target sets MODE/KEY/MANIFEST from the environment.
@@ -49,6 +50,7 @@ launch_kitty() {
 		return
 	fi
 	kitty @ launch --type=window --var claude_img_src="$KEY" \
+		--env AGENT_CAROUSEL_DIR="$STATE_DIR" \
 		--env CLAUDE_STATUS_DIR="$STATE_DIR" \
 		@picker_generate@ "$KEY" >/dev/null
 }
