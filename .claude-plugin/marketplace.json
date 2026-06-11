@@ -4,7 +4,7 @@
   "plugins": [
     {
       "name": "agent-carousel",
-      "source": "./",
+      "source": "./adapters/claude-code/plugin",
       "description": "Image carousel for coding agents (Claude Code capture adapter)."
     }
   ]
