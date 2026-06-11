@@ -61,8 +61,9 @@ ordinary `type:"image"` entries, so the viewer needs **zero display changes**.
 ### Three components
 
 **(a) Ambient guidance — `SessionStart` hook.**
-Injects the "when to diagram" guidance into context every session, gated to
-hosts where the carousel can render (see §Host-gating). The full guidance
+Injects the "when to diagram" guidance into context every session (via the
+hook's stdout / `additionalContext`), gated to hosts where the carousel can
+render (see §Host-gating). The full guidance
 (~10 lines) lives here so the agent's judgment about *when* to diagram is
 reliable, not just a pointer:
 
@@ -82,17 +83,35 @@ Fires when the agent's turn ends:
 2. **Fast-bail:** `grep` for a ```` ```d2 ```` fence first; exit immediately if
    none — the hook runs on *every* turn, so the no-diagram path must be
    microseconds with no JSON parsing.
-3. For each `d2` block: content-hash the source → `<hash>.png`. If that file
-   already exists, skip (dedup — identical source is a no-op; an edited diagram
-   is a new hash, hence a new entry).
-4. Render browser-free: `d2 - <hash>.svg` then `resvg <hash>.svg <hash>.png`.
-   Never `d2 ... .png` (that shells to Chromium).
-5. Append `{type:"image", path, source:"d2", ts, mtime}` to the per-pane
-   manifest. Reusing `type:"image"` means the viewer displays it unchanged;
-   `source:"d2"` records provenance.
+3. Derive the manifest key with the **exact same logic as `images.sh`**:
+   `${TMUX_PANE:-${CLAUDE_CODE_SESSION_ID}}`, strip a leading `%`, and apply the
+   same `^[A-Za-z0-9_@:.-]+$` traversal guard — otherwise diagrams land in a
+   different manifest than the captured images and the carousel splits in two.
+4. For each `d2` block: content-hash the source → `<hash>.png`. **Render** only
+   if that file is absent (an identical re-emitted diagram is a no-op; an edited
+   diagram is a new hash). Render browser-free: `d2 - <hash>.svg` then
+   `resvg <hash>.svg <hash>.png` — never `d2 ... .png` (that shells to Chromium).
+5. **Append** `{type:"image", path, source:"d2", ts, mtime}` to the per-pane
+   manifest — guarded by a `path`-dedup check (mirroring `images.sh`'s
+   `(path,mtime)` guard), *independent* of the render step, so a diagram missing
+   from the manifest is re-added even when its PNG is already cached. The viewer
+   decodes only `path` + `source` (`gallery_render.go:14`), so `type`/`ts`/`mtime`
+   are inert decoration kept for manifest-format parity; `source:"d2"` records
+   provenance.
 6. If ≥1 new diagram rendered **and** this session has not auto-opened yet,
    call the viewer in `--ensure-open` mode and drop the once-per-session marker
    (see §Auto-open).
+
+**Open risk — transcript parsing is a new pattern.** Nothing in agent-carousel
+or lazytmux reads `transcript_path` today; capture is `PostToolUse`
+(`tool_input`/`tool_response`). The implementation plan must first verify the
+Stop payload's `transcript_path`, the JSONL record shape, and that the final
+assistant turn is already flushed when `Stop` fires. **Lower-risk alternative if
+that proves brittle:** have the skill instruct the agent to `Write` the diagram
+to a `*.d2` file and render it from a `PostToolUse` hook — reusing the proven
+hook surface and `cwd`-relative path logic, at the cost of a visible `Write` tool
+call instead of a plain chat code block. Decide in the plan; default to the
+`Stop` approach if transcript parsing checks out.
 
 **(c) Viewer change — `--ensure-open` on `scripts/tmux-claude-images.sh`.**
 Today the script *toggles* (an existing viewer is killed). Add an
@@ -144,13 +163,16 @@ deliberately closed. Mechanism: a per-key marker file
 and no need to distinguish *how* the carousel was closed — which the stricter
 "dismiss sentinel" alternative would have required (the Go viewer writing a
 marker on `q`-quit). New diagrams still land in the manifest and appear the
-moment the user reopens.
+moment the user reopens. (Minor: `.opened` markers are not garbage-collected;
+they share the cleanup story of the per-key manifests themselves, and a reused
+tmux pane id at most suppresses one auto-open — acceptable.)
 
 ## Error handling (define errors out of existence)
 
 - **`d2` or `resvg` not on PATH** → hook no-ops silently, matching the viewer's
   "not installed → do nothing" convention.
-- **Malformed d2** (`d2` exits non-zero) → skip that block, log to a sidecar,
+- **Malformed d2** (`d2` exits non-zero) → skip that block, append the error to
+  `images/diagrams/render-errors.log` (one line: timestamp + hash + stderr),
   **no manifest entry**. Never inject a broken image.
 - **No tmux/kitty host** → `--ensure-open` no-ops, same as the toggle today.
 
