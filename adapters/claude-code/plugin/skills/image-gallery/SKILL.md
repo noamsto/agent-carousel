@@ -20,7 +20,8 @@ tmux-claude-images
 ```
 
 That toggles a split pane for **this** pane's images (it targets `$TMUX_PANE`).
-Run it again to close. The user can also open it themselves with `prefix + I`.
+Run it again to close. The user can also open it with `prefix + I` if their
+tmux config binds it (lazytmux does).
 
 - It's a no-op printing `no images yet for this pane` if nothing has been
   captured yet — the manifest fills as you Read/Write/screenshot images.

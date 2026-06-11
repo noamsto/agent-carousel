@@ -1,9 +1,9 @@
 # agent-carousel
 
-A tmux image carousel for coding agents — a big preview plus a filmstrip of
-thumbnails, rendered in a tmux split. Shows every image a coding-agent session
-touches (reads, writes, screenshots) so you can browse them without leaving the
-terminal.
+A terminal image carousel for coding agents — a big preview plus a filmstrip of
+thumbnails, rendered in a tmux split or kitty window (dual-mode). Shows every
+image a coding-agent session touches (reads, writes, screenshots) so you can
+browse them without leaving the terminal.
 
 Full-fidelity preview on kitty-graphics terminals (kitty/ghostty); `chafa`
 block-art fallback elsewhere.
@@ -15,7 +15,7 @@ knowledge of which agent produced it — the [manifest JSONL](docs/MANIFEST.md) 
 the stable interface. Each agent gets a small **capture adapter** that appends
 to the manifest; the viewer never changes.
 
-- **Viewer** (Go binary) — reads `${CLAUDE_STATUS_DIR:-/tmp/claude-status}/images/<pane>.jsonl`,
+- **Viewer** (Go binary) — reads `${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`,
   renders the carousel via the kitty graphics protocol (or chafa fallback).
 - **Adapters** (`adapters/`) — per-agent capture. Today: `claude-code/`
   (a Claude Code PostToolUse hook + plugin + skill).
@@ -25,6 +25,9 @@ this repo as a flake input.
 
 ## Status
 
-Pre-extraction. See [docs/2026-06-10-design.md](docs/2026-06-10-design.md) for
-the design: standalone-repo extraction + kitty zoom/pan, with D2 diagrams and
-non-kitty zoom as future work.
+Live standalone repo — the viewer binary, Claude Code capture adapter, and
+plugin skill all build and are consumed by
+[lazytmux](https://github.com/noamsto/lazytmux) as a flake input.
+
+See [docs/2026-06-10-design.md](docs/2026-06-10-design.md) for the design
+notes. Zoom/pan (Plan 2) is not yet implemented.
