@@ -42,34 +42,54 @@ Without text, nothing downstream matters. Scope is `diagrams.sh` + a test.
 ### Text rendering
 
 `resvg` skips `@font-face` and then drops text whose `font-family` it cannot
-resolve (`d2-<n>-font-bold`, etc.). Fix: rewrite the synthetic family names in
-d2's SVG to an installed family before resvg runs.
+resolve (`d2-<n>-font-bold`, etc.). Two parts: give resvg fonts to use, and
+point the SVG's text at them.
+
+**Bundle the fonts — don't depend on host fontconfig.** Relying on whatever sans
+the host has is fragile: DejaVu Sans here ships no bold/italic faces, and Noto
+may be absent elsewhere. Bundle the exact fonts d2 itself embeds — `d2 --help`
+documents its defaults as **Source Sans 3** (regular/bold/italic/semibold) +
+**Source Code Pro** (mono). Both are pinnable nixpkgs packages (`source-sans`,
+`source-code-pro`), referenced by store path — **no font blobs vendored into
+git**. The nix wrapper exports the font dir; the hook renders hermetically:
 
 ```sh
-sed -E 's/d2-[0-9]+-font-[a-z]+/Noto Sans/g' "$svg" > "$svg.fixed"
+resvg --skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR" ...
 ```
 
-Verified live: this drops resvg's `No match for font-family` warnings from 15
-to **0** — all text resolves. The regex is anchored to the `-font-<style>`
-suffix, so it rewrites only the 6 font references and leaves the ~116 other
-`d2-<id>` class references (the diagram-id class) untouched. Default family is
-`Noto Sans` (present via fontconfig, and — unlike DejaVu Sans here — it ships
-bold/italic faces, see below); configurable via `AGENT_CAROUSEL_D2_FONT`.
+**Remap the synthetic names** so the text points at the bundled family:
+
+```sh
+sed -E 's/d2-[0-9]+-font-[a-z]+/Source Sans 3/g' "$svg" > "$svg.fixed"
+```
+
+Verified live: a hermetic render (system fonts disabled, only the bundled dir)
+drops resvg's `No match for font-family` warnings from 15 to **0** — all text
+resolves, identically on every host, in d2's intended typeface. The regex is
+anchored to the `-font-<style>` suffix, so it rewrites only the 6 font
+references and leaves the ~116 other `d2-<id>` class references untouched.
+
+Non-nix consumers (the plugin can run outside nix): when
+`AGENT_CAROUSEL_D2_FONT_DIR` is unset, fall back to remapping to a system family
+(`AGENT_CAROUSEL_D2_FONT`, default `Noto Sans`) with system fonts enabled.
 
 ### Bold / italic fidelity
 
-d2 distinguishes weight by font *file*, not `font-weight`, and **the blanket
-remap renders all labels at regular weight** — emphasis is lost. This is *not* a
-one-line fix: the family name is quoted in the SVG (`font-family:
-"d2-<n>-font-bold"`), so appending `font-weight: bold` by string replacement
-lands *inside the quotes* and breaks resolution (verified: 14 dropped labels).
+d2 distinguishes weight by font *file*, not `font-weight`, so the blanket remap
+renders all labels at regular weight unless we add a weight/style signal.
+Bundling fixes the *availability* half — the Source Sans 3 bundle ships real
+`Bold` (weight 700) and `Italic` faces (verified via `fc-scan`), so the faces
+exist for resvg to pick.
 
-Real fidelity requires rewriting d2's CSS *rules* (`.text-bold`, `.text-italic`)
-to add `font-weight`/`font-style` as separate declarations, against a family
-that actually ships those faces — `Noto Sans` qualifies (bold + italic faces
-present; DejaVu Sans here does not). This is a contained but non-trivial CSS
-transform, planned as its own step. If it proves fiddly, regular-weight-only is
-an acceptable Phase 0 ship (text is legible); bold/italic is the polish pass.
+*Selecting* them is the fiddly half: the family name is quoted in the SVG
+(`font-family: "d2-<n>-font-bold"`), so injecting `font-weight` into the name
+breaks it (verified: 14 dropped labels). Real fidelity needs rewriting d2's CSS
+*rules* (`.text-bold`, `.text-italic`) to add `font-weight`/`font-style` as
+separate declarations — and the exact selector must match d2's emitted CSS (a
+naive `.text-bold{` substitution did **not** match in testing). Treated as a
+render-tested implementation detail in the Phase 0 plan. If it proves fiddly,
+regular-weight-only is an acceptable Phase 0 ship (text is legible); bold/italic
+is the polish pass.
 
 ### Theme by light/dark mode
 
@@ -158,19 +178,20 @@ theme. Picked in the Phase 1 plan; flagged here so it isn't discovered late.
 ## Error handling (define errors out of existence)
 
 - Renderers absent → hook no-ops silently (unchanged).
-- Font family unavailable → configurable `AGENT_CAROUSEL_D2_FONT`; default
-  `Noto Sans` is near-universal (DejaVu Sans is a fallback that resolves but
-  lacks bold/italic faces here).
+- Font unavailable → mostly *defined out of existence*: the nix build pins the
+  bundled font dir, so it is always present on nix hosts. Off-nix, fall back to
+  a system family (`AGENT_CAROUSEL_D2_FONT`, default `Noto Sans`).
 - Unknown/garbled mode signal → fall back to light defaults; never crash.
 
 ## Files
 
 | File | Change |
 |---|---|
-| `adapters/claude-code/plugin/scripts/diagrams.sh` | Phase 0: font remap, bold/italic, theme-by-mode + env overrides, sketch default |
-| `tests/diagrams.bats` | Phase 0: text-present regression test; Phase 1: render-test each skill example |
+| `adapters/claude-code/plugin/scripts/diagrams.sh` | Phase 0: font remap + hermetic `--use-fonts-dir`, bold/italic CSS rewrite, theme-by-mode + env overrides, sketch default |
+| `flake.nix` / nix wrapper | Phase 0: add `source-sans` + `source-code-pro` deps; export `AGENT_CAROUSEL_D2_FONT_DIR` to the hook |
+| `tests/diagrams.bats` | Phase 0: zero-`No match` regression test; Phase 1: render-test each skill example |
 | `adapters/claude-code/plugin/skills/diagrams/SKILL.md` | Phase 1: full rewrite (rich + beautiful + flow direction) |
-| `gallery.go`, `gallery_render.go`, `gallery_cache.go` | Phase 2: zoom/pan, maximize, upscale, dedup (aligned with zoom-pan plan) |
+| `gallery.go`, `gallery_render.go`, `gallery_cache.go` | Phase 2: zoom/pan, maximize, upscale, dedup (extends zoom-pan plan; coordinate with the in-flight `feat/carousel-staleness-window-fixes` work) |
 
 ## Phasing & ordering
 
