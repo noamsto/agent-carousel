@@ -80,6 +80,7 @@ func (m *galleryModel) panBy(dx, dy float64) {
 func (m *galleryModel) ensureDecoded() {
 	if len(m.images) == 0 {
 		m.curImg, m.curImgPath = nil, ""
+		m.regions, m.regionPath, m.regionIdx = nil, nil, -1
 		return
 	}
 	p := m.images[m.cursor].Path
@@ -87,6 +88,7 @@ func (m *galleryModel) ensureDecoded() {
 		return
 	}
 	m.resetZoom()
+	m.regions, m.regionPath, m.regionIdx = nil, nil, -1
 	f, err := os.Open(p)
 	if err != nil {
 		m.curImg = nil

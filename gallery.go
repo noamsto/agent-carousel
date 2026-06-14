@@ -96,6 +96,9 @@ type galleryModel struct {
 	crop       cropFrac    // visible sub-rectangle of the source (fullCrop = fit)
 	curImg     image.Image // decoded source of the current selection
 	curImgPath string      // path curImg was decoded from
+	regions    *regionTree // parsed lazily for the current d2 entry; nil when none
+	regionPath []string    // current drill level (container path components); empty = root
+	regionIdx  int         // focused sibling index at the current level; -1 = not in region mode
 
 	// Theme colors, resolved once at startup (tmux options are session-invariant).
 	selColor, dimColor, hintFg, textFg imgcolor.Color
@@ -222,8 +225,30 @@ func (m galleryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.zoomBy(1 / 1.25)
 			m.transmitPreviewOnly()
 		case "0", "esc":
-			m.resetZoom()
+			m.exitRegions()
 			m.transmitPreviewOnly()
+		case "tab":
+			m.ensureRegions()
+			if m.regions != nil {
+				m.cycleRegion(+1)
+				m.transmitPreviewOnly()
+			}
+		case "shift+tab":
+			m.ensureRegions()
+			if m.regions != nil {
+				m.cycleRegion(-1)
+				m.transmitPreviewOnly()
+			}
+		case "]":
+			if m.regions != nil && m.regionIdx >= 0 {
+				m.drillIn()
+				m.transmitPreviewOnly()
+			}
+		case "[":
+			if m.regions != nil && m.regionIdx >= 0 {
+				m.drillOut()
+				m.transmitPreviewOnly()
+			}
 		case "n":
 			m.selectIndex(m.cursor + m.l.stripCols)
 		case "p":
@@ -356,7 +381,11 @@ func (m galleryModel) renderView() string {
 
 	// Centered key hints at the bottom.
 	hint := "↵/o open · O folder · h/l move · n/p page · g/G first/last · z/Z zoom · q quit"
-	if !m.crop.isFull() {
+	if m.regions != nil && m.regionIdx >= 0 {
+		if r, ok := m.focusedRegion(); ok {
+			hint = "region: " + r.path + " · ⇥ next · ] [ drill · esc exit"
+		}
+	} else if !m.crop.isFull() {
 		hint = "←↑↓→/hjkl pan · z/Z zoom · 0/esc reset · q quit"
 	}
 	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(hint))
