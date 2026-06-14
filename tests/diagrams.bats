@@ -98,14 +98,14 @@ STUB
 @test "d2 not available -> clean no-op" {
 	# Point at a command that cannot exist, so command -v fails deterministically
 	# regardless of any real d2 on PATH (e.g. from the devShell).
-	export AGENT_CAROUSEL_D2=__agent_carousel_absent_d2__
+	export AEYE_D2=__aeye_absent_d2__
 	run run_app hook-write-d2.json
 	[ "$status" -eq 0 ]
 	[ ! -f "$MANIFEST" ]
 }
 
 @test "resvg not available -> clean no-op" {
-	export AGENT_CAROUSEL_RESVG=__agent_carousel_absent_resvg__
+	export AEYE_RESVG=__aeye_absent_resvg__
 	run run_app hook-write-d2.json
 	[ "$status" -eq 0 ]
 	[ ! -f "$MANIFEST" ]
@@ -148,7 +148,7 @@ STUB
 	chmod +x "$STUB_BIN/d2"
 	# shellcheck disable=SC2030
 	export D2_ARGLOG="$BATS_TEST_TMPDIR/d2args.log"
-	export AGENT_CAROUSEL_D2_THEME=200
+	export AEYE_D2_THEME=200
 	run_app hook-write-d2.json
 	run cat "$D2_ARGLOG"
 	[[ $output == *"-t 200"* ]] || {
@@ -161,7 +161,7 @@ STUB
 	}
 }
 
-@test "AGENT_CAROUSEL_D2_SKETCH=0 disables sketch" {
+@test "AEYE_D2_SKETCH=0 disables sketch" {
 	cat >"$STUB_BIN/d2" <<'STUB'
 #!/usr/bin/env bash
 echo "$*" >>"$D2_ARGLOG"
@@ -170,7 +170,7 @@ STUB
 	chmod +x "$STUB_BIN/d2"
 	# shellcheck disable=SC2031
 	export D2_ARGLOG="$BATS_TEST_TMPDIR/d2args.log"
-	export AGENT_CAROUSEL_D2_SKETCH=0
+	export AEYE_D2_SKETCH=0
 	run_app hook-write-d2.json
 	run cat "$D2_ARGLOG"
 	[[ $output != *"--sketch"* ]] || {
@@ -197,15 +197,15 @@ printf 'PNG' >"${@: -1}"
 STUB
 	chmod +x "$STUB_BIN/resvg"
 	export RESVG_ARGLOG="$BATS_TEST_TMPDIR/resvgargs.log"
-	export AGENT_CAROUSEL_D2_FONT_DIR="$BATS_TEST_TMPDIR/fonts"
-	mkdir -p "$AGENT_CAROUSEL_D2_FONT_DIR"
+	export AEYE_D2_FONT_DIR="$BATS_TEST_TMPDIR/fonts"
+	mkdir -p "$AEYE_D2_FONT_DIR"
 	run_app hook-write-d2.json
 	run cat "$RESVG_ARGLOG"
 	[[ $output == *"--skip-system-fonts"* ]] || {
 		echo "missing --skip-system-fonts in: $output" >&2
 		return 1
 	}
-	[[ $output == *"--use-fonts-dir $AGENT_CAROUSEL_D2_FONT_DIR"* ]] || {
+	[[ $output == *"--use-fonts-dir $AEYE_D2_FONT_DIR"* ]] || {
 		echo "missing --use-fonts-dir in: $output" >&2
 		return 1
 	}

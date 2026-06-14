@@ -1,4 +1,4 @@
-# agent-carousel: D2 diagrams in the carousel
+# aeye: D2 diagrams in the carousel
 
 **Date:** 2026-06-11
 **Status:** Design approved, pending spec review
@@ -120,7 +120,7 @@ PostToolUse hooks). It triggers on any tool whose target is a `.d2` file —
 `Write`, `Edit`, or `MultiEdit` — so editing a diagram re-renders it.
 
 **Why not a `Stop` hook?** The earlier design read the transcript on `Stop` and
-parsed ```` ```d2 ```` blocks. Nothing in agent-carousel or lazytmux reads
+parsed ```` ```d2 ```` blocks. Nothing in aeye or lazytmux reads
 `transcript_path` today, making that an unproven pattern; the `.d2`-file route
 reuses the verified `PostToolUse` surface and keeps the chat free of raw d2
 source. We accept one visible `Write` tool call per diagram in exchange.
@@ -133,10 +133,10 @@ unchanged; only the hook uses `--ensure-open`.
 
 ### Storage: diagrams are primary artifacts, not cache
 
-Rendered diagram PNG files live in **`${AGENT_CAROUSEL_DIR:-…}/images/diagrams/`** —
+Rendered diagram PNG files live in **`${AEYE_DIR:-…}/images/diagrams/`** —
 durable, alongside the manifest. The `.d2` sources the agent writes sit beside
 them in **`images/diagrams/src/`**. Neither is placed in the transcode cache
-(`agent-carousel-imgcache`): that cache holds *derived* artifacts regenerable
+(`aeye-imgcache`): that cache holds *derived* artifacts regenerable
 from a source image, so it is safely evictable. A diagram PNG referenced by the
 manifest must persist — cache eviction would leave dangling paths and gaps in the
 carousel. (The `.d2` source surviving means a diagram is always re-renderable,
@@ -172,7 +172,7 @@ The first diagram of a session opens the carousel (so the user discovers it);
 subsequent diagrams render to the manifest only (refresh-if-open, never
 force-open). This avoids the nag where the hook reopens a carousel the user
 deliberately closed. Mechanism: a per-key marker file
-`${AGENT_CAROUSEL_DIR:-…}/images/<key>.opened`. First render with no marker →
+`${AEYE_DIR:-…}/images/<key>.opened`. First render with no marker →
 `--ensure-open` + touch marker; later renders skip the open. No viewer changes
 and no need to distinguish *how* the carousel was closed — which the stricter
 "dismiss sentinel" alternative would have required (the Go viewer writing a

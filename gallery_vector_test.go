@@ -16,7 +16,7 @@ func TestVectorTargetWBounded(t *testing.T) {
 }
 
 func TestRenderVectorMissingResvg(t *testing.T) {
-	t.Setenv("AGENT_CAROUSEL_RESVG", "/definitely/not/resvg")
+	t.Setenv("AEYE_RESVG", "/definitely/not/resvg")
 	if got := renderVector("/whatever.svg", 1000); got != "" {
 		t.Errorf("absent resvg must yield empty string, got %q", got)
 	}

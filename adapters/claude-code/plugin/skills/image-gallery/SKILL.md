@@ -1,11 +1,11 @@
 ---
 name: image-gallery
-description: Use when the user wants to see the images from this conversation — screenshots, images you Read or Wrote, generated pictures. Opens the agent-carousel image carousel (preview + filmstrip) in a tmux split or a kitty window.
+description: Use when the user wants to see the images from this conversation — screenshots, images you Read or Wrote, generated pictures. Opens the aeye image carousel (preview + filmstrip) in a tmux split or a kitty window.
 ---
 
 # Image Gallery
 
-The agent-carousel plugin captures every image this Claude Code pane touches (Read / Write /
+The aeye plugin captures every image this Claude Code pane touches (Read / Write /
 screenshot tools) into a per-pane manifest, and renders them as a browsable
 **carousel** — a big preview of the selected image plus a filmstrip of
 thumbnails — in a tmux split or a kitty window.
@@ -35,7 +35,7 @@ close):
 
 ## Requirements
 
-- Needs the agent-carousel viewer on PATH (the `tmux-claude-images` command)
+- Needs the aeye viewer on PATH (the `tmux-claude-images` command)
   plus a host to open in: either tmux, or kitty with remote control enabled
   (`$KITTY_LISTEN_ON` set). Outside both it prints a hint and does nothing. If
   the command isn't found, the viewer isn't installed — don't try to substitute

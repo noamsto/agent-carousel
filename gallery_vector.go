@@ -38,14 +38,14 @@ func renderVector(vector string, targetW int) string {
 	if err != nil {
 		return ""
 	}
-	bin := os.Getenv("AGENT_CAROUSEL_RESVG")
+	bin := os.Getenv("AEYE_RESVG")
 	if bin == "" {
 		bin = "resvg"
 	}
 	// One cached PNG per (svg, mtime); the zoom level (targetW) is the filename
 	// suffix so we can evict prior zoom levels — /tmp then holds at most one
 	// vector scratch per diagram, not one per zoom step.
-	stem := fmt.Sprintf("agent-carousel-vec-%x", sha1.Sum([]byte(fmt.Sprintf("%s|%d", vector, fi.ModTime().UnixNano()))))
+	stem := fmt.Sprintf("aeye-vec-%x", sha1.Sum([]byte(fmt.Sprintf("%s|%d", vector, fi.ModTime().UnixNano()))))
 	out := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.png", stem, targetW))
 	if _, err := os.Stat(out); err == nil {
 		return out

@@ -1,6 +1,6 @@
 ---
 name: diagrams
-description: Use when a picture beats prose — drawing architecture, data flow, state machines, pipelines, or entity relationships as a D2 diagram that renders into the agent-carousel viewer. Produces beautiful, legible diagrams (sketch style, role-by-stroke palette) and covers the full authoring vocabulary plus where to write the file.
+description: Use when a picture beats prose — drawing architecture, data flow, state machines, pipelines, or entity relationships as a D2 diagram that renders into the aeye viewer. Produces beautiful, legible diagrams (sketch style, role-by-stroke palette) and covers the full authoring vocabulary plus where to write the file.
 ---
 
 # Diagrams (D2 → carousel)

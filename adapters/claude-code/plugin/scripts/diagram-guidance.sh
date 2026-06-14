@@ -6,7 +6,7 @@ set -euo pipefail
 
 [[ -n ${TMUX:-} || -n ${KITTY_LISTEN_ON:-} ]] || exit 0
 
-STATE_DIR="${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
+STATE_DIR="${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
 SRC_DIR="$STATE_DIR/images/diagrams/src"
 mkdir -p "$SRC_DIR"
 

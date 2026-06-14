@@ -117,7 +117,7 @@ func cropPixels(b image.Rectangle, c cropFrac) image.Rectangle {
 // zoomScratchPath is a per-pane scratch file so concurrently-zoomed panes don't
 // overwrite each other's preview render.
 func (m *galleryModel) zoomScratchPath() string {
-	return filepath.Join(os.TempDir(), "agent-carousel-zoom-"+strings.TrimPrefix(m.pane, "%")+".png")
+	return filepath.Join(os.TempDir(), "aeye-zoom-"+strings.TrimPrefix(m.pane, "%")+".png")
 }
 
 // renderCropOf crops src to m.crop, downscales to the cols×rows cell box, writes

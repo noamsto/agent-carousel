@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// usage: agent-carousel <key>
+// usage: aeye <key>
 // <key> is a tmux pane id (%N) or a Claude Code session id — whatever the
 // capture adapter used to name the manifest file.
 func main() {

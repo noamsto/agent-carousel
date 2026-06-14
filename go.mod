@@ -1,4 +1,4 @@
-module github.com/noamsto/agent-carousel
+module github.com/noamsto/aeye
 
 go 1.25.0
 

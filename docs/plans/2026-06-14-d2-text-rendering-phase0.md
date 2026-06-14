@@ -21,15 +21,15 @@
 | `tests/fixtures/d2-fonts-sample.svg` | **new** — minimal SVG carrying d2's synthetic font patterns + `.text-bold`/`.text-italic` rules, for the unit test. |
 | `tests/d2-fix-fonts.bats` | **new** — unit tests for the transform. |
 | `tests/diagrams.bats` | **modify** — assert the hook passes theme/sketch + font-dir flags; add a real-binary integration test asserting zero `No match`. |
-| `flake.nix` | **modify** — add `source-sans` + `source-code-pro`; export `AGENT_CAROUSEL_D2_FONT*` in the devShell so tests + dev render hermetically. |
+| `flake.nix` | **modify** — add `source-sans` + `source-code-pro`; export `AEYE_D2_FONT*` in the devShell so tests + dev render hermetically. |
 
 **Env contract (used by `diagrams.sh`):**
-- `AGENT_CAROUSEL_D2_FONT` — family to remap to (default `Noto Sans`).
-- `AGENT_CAROUSEL_D2_FONT_DIR` — optional; when set, resvg uses only this dir (`--skip-system-fonts --use-fonts-dir`).
-- `AGENT_CAROUSEL_D2_THEME` — d2 theme id (default `105`, Buttered Toast). The nix wrapper sets this to `200` (Dark Mauve) in dark mode.
-- `AGENT_CAROUSEL_D2_SKETCH` — `0` disables sketch; anything else (default) enables `--sketch`.
+- `AEYE_D2_FONT` — family to remap to (default `Noto Sans`).
+- `AEYE_D2_FONT_DIR` — optional; when set, resvg uses only this dir (`--skip-system-fonts --use-fonts-dir`).
+- `AEYE_D2_THEME` — d2 theme id (default `105`, Buttered Toast). The nix wrapper sets this to `200` (Dark Mauve) in dark mode.
+- `AEYE_D2_SKETCH` — `0` disables sketch; anything else (default) enables `--sketch`.
 
-> **Downstream (not in this repo):** for the *deployed* hook to render hermetically in d2's own typeface, the nix-config Claude wrapper must export `AGENT_CAROUSEL_D2_FONT_DIR=<source-sans>/share/fonts/truetype` and `AGENT_CAROUSEL_D2_FONT="Source Sans 3"`. Tracked as a follow-up nix-config change, mirroring the lazytmux input bump.
+> **Downstream (not in this repo):** for the *deployed* hook to render hermetically in d2's own typeface, the nix-config Claude wrapper must export `AEYE_D2_FONT_DIR=<source-sans>/share/fonts/truetype` and `AEYE_D2_FONT="Source Sans 3"`. Tracked as a follow-up nix-config change, mirroring the lazytmux input bump.
 
 ---
 
@@ -77,8 +77,8 @@ setup() {
 	[ "$output" -ge 1 ]
 }
 
-@test "honors AGENT_CAROUSEL_D2_FONT override" {
-	AGENT_CAROUSEL_D2_FONT="Source Sans 3" bash "$APP" "$SVG"
+@test "honors AEYE_D2_FONT override" {
+	AEYE_D2_FONT="Source Sans 3" bash "$APP" "$SVG"
 	run grep -c 'Source Sans 3' "$SVG"
 	[ "$output" -ge 1 ]
 }
@@ -109,7 +109,7 @@ Create `adapters/claude-code/plugin/scripts/d2-fix-fonts.sh`:
 set -euo pipefail
 
 svg="$1"
-family="${AGENT_CAROUSEL_D2_FONT:-Noto Sans}"
+family="${AEYE_D2_FONT:-Noto Sans}"
 
 sed -E \
 	-e "s/d2-[0-9]+-font-[a-z]+/${family}/g" \
@@ -174,14 +174,14 @@ printf '<svg/>' >"${@: -1}"
 STUB
 	chmod +x "$STUB_BIN/d2"
 	export D2_ARGLOG="$BATS_TEST_TMPDIR/d2args.log"
-	export AGENT_CAROUSEL_D2_THEME=200
+	export AEYE_D2_THEME=200
 	run_app hook-write-d2.json
 	run cat "$D2_ARGLOG"
 	[[ "$output" == *"-t 200"* ]]
 	[[ "$output" == *"--sketch"* ]]
 }
 
-@test "AGENT_CAROUSEL_D2_SKETCH=0 disables sketch" {
+@test "AEYE_D2_SKETCH=0 disables sketch" {
 	cat >"$STUB_BIN/d2" <<'STUB'
 #!/usr/bin/env bash
 echo "$*" >>"$D2_ARGLOG"
@@ -189,7 +189,7 @@ printf '<svg/>' >"${@: -1}"
 STUB
 	chmod +x "$STUB_BIN/d2"
 	export D2_ARGLOG="$BATS_TEST_TMPDIR/d2args.log"
-	export AGENT_CAROUSEL_D2_SKETCH=0
+	export AEYE_D2_SKETCH=0
 	run_app hook-write-d2.json
 	run cat "$D2_ARGLOG"
 	[[ "$output" != *"--sketch"* ]]
@@ -203,12 +203,12 @@ printf 'PNG' >"${@: -1}"
 STUB
 	chmod +x "$STUB_BIN/resvg"
 	export RESVG_ARGLOG="$BATS_TEST_TMPDIR/resvgargs.log"
-	export AGENT_CAROUSEL_D2_FONT_DIR="$BATS_TEST_TMPDIR/fonts"
-	mkdir -p "$AGENT_CAROUSEL_D2_FONT_DIR"
+	export AEYE_D2_FONT_DIR="$BATS_TEST_TMPDIR/fonts"
+	mkdir -p "$AEYE_D2_FONT_DIR"
 	run_app hook-write-d2.json
 	run cat "$RESVG_ARGLOG"
 	[[ "$output" == *"--skip-system-fonts"* ]]
-	[[ "$output" == *"--use-fonts-dir $AGENT_CAROUSEL_D2_FONT_DIR"* ]]
+	[[ "$output" == *"--use-fonts-dir $AEYE_D2_FONT_DIR"* ]]
 }
 ```
 
@@ -223,15 +223,15 @@ Replace lines 38-60 (the `if [[ ! -f $png ]]; then ... fi` block) with:
 
 ```bash
 if [[ ! -f $png ]]; then
-	d2_bin="${AGENT_CAROUSEL_D2:-d2}"
-	resvg_bin="${AGENT_CAROUSEL_RESVG:-resvg}"
+	d2_bin="${AEYE_D2:-d2}"
+	resvg_bin="${AEYE_RESVG:-resvg}"
 	command -v "$d2_bin" >/dev/null 2>&1 || exit 0
 	command -v "$resvg_bin" >/dev/null 2>&1 || exit 0
 	svg="$DIAGRAMS_DIR/$hash.svg"
 	err="$DIAGRAMS_DIR/$hash.err"
 
-	d2_args=(-t "${AGENT_CAROUSEL_D2_THEME:-105}")
-	[[ "${AGENT_CAROUSEL_D2_SKETCH:-1}" != 0 ]] && d2_args+=(--sketch)
+	d2_args=(-t "${AEYE_D2_THEME:-105}")
+	[[ "${AEYE_D2_SKETCH:-1}" != 0 ]] && d2_args+=(--sketch)
 	if ! "$d2_bin" "${d2_args[@]}" "$candidate" "$svg" 2>"$err"; then
 		printf -v now '%(%FT%T%z)T' -1
 		printf '%s\t%s\t%s\n' "$now" "$hash" "$(tr '\n' ' ' <"$err")" \
@@ -244,8 +244,8 @@ if [[ ! -f $png ]]; then
 	bash "$(dirname "${BASH_SOURCE[0]}")/d2-fix-fonts.sh" "$svg"
 
 	resvg_args=()
-	if [[ -n ${AGENT_CAROUSEL_D2_FONT_DIR:-} ]]; then
-		resvg_args+=(--skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR")
+	if [[ -n ${AEYE_D2_FONT_DIR:-} ]]; then
+		resvg_args+=(--skip-system-fonts --use-fonts-dir "$AEYE_D2_FONT_DIR")
 	fi
 	if ! "$resvg_bin" "${resvg_args[@]}" "$svg" "$png" 2>>"$err"; then
 		printf -v now '%(%FT%T%z)T' -1
@@ -309,8 +309,8 @@ setup() {
 
 	# Prefer the hermetic bundle when the env points at one; else system fonts.
 	args=()
-	if [[ -n ${AGENT_CAROUSEL_D2_FONT_DIR:-} ]]; then
-		args=(--skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR")
+	if [[ -n ${AEYE_D2_FONT_DIR:-} ]]; then
+		args=(--skip-system-fonts --use-fonts-dir "$AEYE_D2_FONT_DIR")
 	fi
 	run bash -c 'resvg "$@" "'"$SVG"'" "'"$BATS_TEST_TMPDIR"'/out.png" 2>&1' _ "${args[@]}"
 	[[ "$output" != *"No match for font-family"* ]]
@@ -320,7 +320,7 @@ setup() {
 - [ ] **Step 2: Run it inside the devShell**
 
 Run: `nix develop -c bats tests/d2-render-real.bats`
-Expected: PASS (the devShell provides `d2`, `resvg`, and — after Task 4 — `AGENT_CAROUSEL_D2_FONT_DIR`). Without the font env it still passes via system fonts; if `d2`/`resvg` are missing it SKIPs.
+Expected: PASS (the devShell provides `d2`, `resvg`, and — after Task 4 — `AEYE_D2_FONT_DIR`). Without the font env it still passes via system fonts; if `d2`/`resvg` are missing it SKIPs.
 
 - [ ] **Step 3: Commit**
 
@@ -343,8 +343,8 @@ Replace the `devShells.default` block (lines 38-43) with:
 ```nix
         devShells.default = pkgs.mkShell {
           inherit (config.pre-commit) shellHook;
-          AGENT_CAROUSEL_D2_FONT = "Source Sans 3";
-          AGENT_CAROUSEL_D2_FONT_DIR = "${pkgs.source-sans}/share/fonts/truetype";
+          AEYE_D2_FONT = "Source Sans 3";
+          AEYE_D2_FONT_DIR = "${pkgs.source-sans}/share/fonts/truetype";
           packages =
             config.pre-commit.settings.enabledPackages
             ++ [pkgs.go pkgs.gopls pkgs.gotools pkgs.golangci-lint pkgs.chafa pkgs.bats pkgs.goreleaser pkgs.gh pkgs.d2 pkgs.resvg pkgs.source-sans pkgs.source-code-pro];
@@ -353,13 +353,13 @@ Replace the `devShells.default` block (lines 38-43) with:
 
 - [ ] **Step 2: Verify the font dir exists and holds the faces**
 
-Run: `nix develop -c bash -c 'ls "$AGENT_CAROUSEL_D2_FONT_DIR" | grep -E "SourceSans3-(Regular|Bold|It)\.ttf"'`
+Run: `nix develop -c bash -c 'ls "$AEYE_D2_FONT_DIR" | grep -E "SourceSans3-(Regular|Bold|It)\.ttf"'`
 Expected: lists `SourceSans3-Regular.ttf`, `SourceSans3-Bold.ttf`, `SourceSans3-It.ttf`.
 
 - [ ] **Step 3: Re-run the real-render test hermetically**
 
 Run: `nix develop -c bats tests/d2-render-real.bats`
-Expected: PASS — now exercising `--skip-system-fonts --use-fonts-dir <Source Sans 3>` with `AGENT_CAROUSEL_D2_FONT="Source Sans 3"`.
+Expected: PASS — now exercising `--skip-system-fonts --use-fonts-dir <Source Sans 3>` with `AEYE_D2_FONT="Source Sans 3"`.
 
 - [ ] **Step 4: Validate the flake**
 
@@ -384,8 +384,8 @@ Expected: all pass (unit transform, hook wiring, real render, plus pre-existing 
 
 - [ ] **Manual smoke (optional, in a kitty+tmux pane)**
 
-Write a `.d2` with a bold/italic label to the scratch dir and confirm the carousel shows a diagram **with legible text**. (`AGENT_CAROUSEL_D2_THEME=200` to check dark.)
+Write a `.d2` with a bold/italic label to the scratch dir and confirm the carousel shows a diagram **with legible text**. (`AEYE_D2_THEME=200` to check dark.)
 
 ## Out of scope for Phase 0 (tracked elsewhere)
-- nix-config Claude-wrapper export of `AGENT_CAROUSEL_D2_FONT_DIR`/`_FONT`/`_THEME`-by-mode (downstream integration, like the lazytmux bump).
+- nix-config Claude-wrapper export of `AEYE_D2_FONT_DIR`/`_FONT`/`_THEME`-by-mode (downstream integration, like the lazytmux bump).
 - Rich authoring skill (Phase 1) and carousel display upgrades (Phase 2).

@@ -1,5 +1,5 @@
 {
-  "name": "agent-carousel",
+  "name": "aeye",
   "version": "0.1.0",
   "description": "Capture images this Claude Code session touches and browse them in a tmux/kitty carousel.",
   "hooks": "./hooks/hooks.json",

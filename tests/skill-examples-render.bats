@@ -37,7 +37,7 @@ setup() {
 
 		bash "$FIX" "$out"
 		args=()
-		[[ -n ${AGENT_CAROUSEL_D2_FONT_DIR:-} ]] && args=(--skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR")
+		[[ -n ${AEYE_D2_FONT_DIR:-} ]] && args=(--skip-system-fonts --use-fonts-dir "$AEYE_D2_FONT_DIR")
 		run bash -c 'resvg "$@" 2>&1' _ "${args[@]}" "$out" "$BATS_TEST_TMPDIR/ex$i.png"
 		[ "$status" -eq 0 ] || {
 			echo "example $i resvg failed: $output"
