@@ -28,6 +28,10 @@ too, but installs only the viewer.
 The block-art fallback needs [`chafa`](https://hpjansson.org/chafa/) on PATH;
 kitty/ghostty render directly without it.
 
+**Diagrams (optional):** the agent can draw [D2](https://d2lang.com) diagrams
+that render into the carousel — this needs `d2` and `resvg` on PATH. Without
+them the diagram hook no-ops silently.
+
 ### Claude Code plugin
 
 This repo doubles as its own single-plugin marketplace. The plugin is the
