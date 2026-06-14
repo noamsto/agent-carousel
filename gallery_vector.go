@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 
 	tea "charm.land/bubbletea/v2"
 	"golang.org/x/image/draw"
@@ -41,15 +42,23 @@ func renderVector(vector string, targetW int) string {
 	if bin == "" {
 		bin = "resvg"
 	}
-	key := fmt.Sprintf("%s|%d|%d", vector, fi.ModTime().UnixNano(), targetW)
-	out := filepath.Join(os.TempDir(), fmt.Sprintf("agent-carousel-vec-%x.png", sha1.Sum([]byte(key))))
+	// One cached PNG per (svg, mtime); the zoom level (targetW) is the filename
+	// suffix so we can evict prior zoom levels — /tmp then holds at most one
+	// vector scratch per diagram, not one per zoom step.
+	stem := fmt.Sprintf("agent-carousel-vec-%x", sha1.Sum([]byte(fmt.Sprintf("%s|%d", vector, fi.ModTime().UnixNano()))))
+	out := filepath.Join(os.TempDir(), fmt.Sprintf("%s-%d.png", stem, targetW))
 	if _, err := os.Stat(out); err == nil {
 		return out
 	}
 	if _, err := exec.LookPath(bin); err != nil {
 		return ""
 	}
-	if err := exec.Command(bin, "--width", fmt.Sprint(targetW), vector, out).Run(); err != nil {
+	// Evict stale zoom levels for this svg before rendering the new one.
+	olds, _ := filepath.Glob(filepath.Join(os.TempDir(), stem+"-*.png"))
+	for _, o := range olds {
+		os.Remove(o)
+	}
+	if err := exec.Command(bin, "--width", strconv.Itoa(targetW), vector, out).Run(); err != nil {
 		os.Remove(out)
 		return ""
 	}

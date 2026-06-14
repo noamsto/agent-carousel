@@ -255,6 +255,9 @@ func (m galleryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		var src string
+		// Reuses the per-pane zoom scratch file. Safe: Update is single-threaded
+		// and kitty fetches the t=f path when it parses the placement we emit
+		// right after, so a later render can't overwrite it mid-fetch.
 		if m.crop.isFull() {
 			src = writePNGEnc(m.zoomScratchPath(),
 				fitToBox(msg.raster, m.l.previewW*cellPxW, m.l.previewH*cellPxH),
