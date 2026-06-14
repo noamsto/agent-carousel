@@ -1,51 +1,70 @@
-# agent-carousel
+<div align="center">
 
-A terminal image carousel for coding agents — a big preview plus a filmstrip of
-thumbnails, rendered in a tmux split or kitty window (dual-mode). Shows every
-image a coding-agent session touches (reads, writes, screenshots) so you can
-browse them without leaving the terminal.
+# 🎠 agent-carousel
 
-Full-fidelity preview on kitty-graphics terminals (kitty/ghostty); `chafa`
-block-art fallback elsewhere.
+**A terminal image carousel for coding agents** — browse every screenshot,
+render, and image your agent touches, without leaving the terminal.
+
+[![CI](https://github.com/noamsto/agent-carousel/actions/workflows/ci.yml/badge.svg)](https://github.com/noamsto/agent-carousel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](go.mod)
+
+</div>
+
+<!-- TODO(demo): hero screenshot + demo.gif — deferred until the rich-diagrams
+     work lands so the demo captures diagrams at their best. Drop assets in
+     docs/assets/ and replace this comment. -->
+
+A big **preview** of the selected image plus a **filmstrip** of thumbnails,
+rendered in a tmux split or kitty window (dual-mode). One half **captures** every
+image a coding-agent session touches (reads, writes, screenshots); the other
+**renders** them and auto-refreshes as new ones arrive — so you can glance at
+what your agent is doing without leaving the terminal.
+
+## Features
+
+- 🖼️ **Preview + filmstrip** — a large view of the selected image above a
+  scrollable strip of thumbnails.
+- 🪄 **Auto-capture** — a PostToolUse hook records every image the session reads,
+  writes, or screenshots into a per-pane manifest. Nothing to do by hand.
+- 🔭 **Dual-mode rendering** — a tmux split or a kitty window, auto-detected from
+  the host. Opens beside your agent, not wherever you happened to navigate.
+- ⚡ **Live** — opens on the newest image and follows new captures as they stream
+  in, until you take over with the keyboard; polls for changes every ~1.5s.
+- ✨ **Crisp** — kitty graphics protocol on kitty/ghostty, with a
+  [`chafa`](https://hpjansson.org/chafa/) block-art fallback everywhere else.
+- 🧹 **Robust** — skips deleted or corrupt entries instead of rendering blank
+  cells; logs why, for when you wonder where an image went.
+- 📊 **Diagrams (optional)** — the agent can draw [D2](https://d2lang.com)
+  diagrams that render straight into the carousel.
 
 ## Install
 
-The carousel has two PATH entrypoints: the `agent-carousel` viewer and the
-`tmux-claude-images` toggle that opens it. Put **both** on your PATH — the
-toggle launches the viewer into a fresh tmux/kitty pane, which resolves
-`agent-carousel` from your PATH (override with `$AGENT_CAROUSEL_BIN`).
+Two PATH entrypoints — the `agent-carousel` viewer and the `tmux-claude-images`
+toggle that opens it. Put **both** on your PATH (the toggle launches the viewer
+into a fresh pane, which resolves `agent-carousel` from that pane's PATH).
 
 ```bash
 nix profile install github:noamsto/agent-carousel          # viewer
 nix profile install github:noamsto/agent-carousel#toggle   # toggle
 ```
 
-Or grab the prebuilt archive (viewer **and** toggle) for your platform from the
+Or grab the prebuilt archive (both binaries) from the
 [releases page](https://github.com/noamsto/agent-carousel/releases) and extract
-both onto your PATH. `go install github.com/noamsto/agent-carousel@latest` works
-too, but installs only the viewer.
+onto your PATH. `go install github.com/noamsto/agent-carousel@latest` works too,
+but installs only the viewer.
 
-The block-art fallback needs [`chafa`](https://hpjansson.org/chafa/) on PATH;
-kitty/ghostty render directly without it.
-
-**Diagrams (optional):** the agent can draw [D2](https://d2lang.com) diagrams
-that render into the carousel — this needs `d2` and `resvg` on PATH. Without
-them the diagram hook no-ops silently.
-
-### Claude Code plugin
-
-This repo doubles as its own single-plugin marketplace. The plugin is the
-**capture** half — a PostToolUse hook that records every image your session
-touches so the carousel has something to show:
+Then install the **capture** half — the Claude Code plugin (run inside Claude
+Code, not the shell):
 
 ```
 /plugin marketplace add noamsto/agent-carousel
 /plugin install agent-carousel@agent-carousel
 ```
 
-Then ask Claude to *show the images from this conversation*, or invoke the
-`image-gallery` skill. The plugin only captures; opening the carousel uses the
-`tmux-claude-images` command from the install step above.
+> 📖 **Step-by-step, agent-friendly guide:** [`docs/INSTALL.md`](docs/INSTALL.md)
+> — host check, both entrypoints, plugin, optional deps, and a smoke test, each
+> with a verification command.
 
 <details>
 <summary>Via lazytmux (Nix / Home Manager)</summary>
@@ -57,26 +76,51 @@ plugin above for capture.
 
 </details>
 
+## Usage
+
+Ask your agent to *show the images from this conversation* (or invoke the
+`image-gallery` skill), or open it yourself:
+
+```bash
+tmux-claude-images   # toggle: run again to close. In tmux, also prefix + I (lazytmux)
+```
+
+It does nothing until images have been captured — the manifest fills as the
+session reads/writes/screenshots images.
+
+### Keybindings
+
+| Key | Action |
+|---|---|
+| `←` `→` / `h` `l` / `↑` `↓` / `k` `j` | Move selection |
+| `n` / `p` | Page the filmstrip |
+| `g` / `G` (or `Home` / `End`) | First / last image |
+| `1`–`9` | Jump to the Nth image |
+| `Enter` / `o` | Open in the default app |
+| `O` | Open the containing folder |
+| `r` | Reload the manifest |
+| `q` / `Ctrl-C` | Quit |
+
 ## Architecture
 
 The viewer is **agent-agnostic**. It renders a per-pane manifest and has no
 knowledge of which agent produced it — the [manifest JSONL](docs/MANIFEST.md) is
-the stable interface. Each agent gets a small **capture adapter** that appends
-to the manifest; the viewer never changes.
+the stable interface. Each agent gets a small **capture adapter** that appends to
+the manifest; the viewer never changes.
 
-- **Viewer** (Go binary) — reads `${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`,
-  renders the carousel via the kitty graphics protocol (or chafa fallback).
+- **Viewer** (Go binary) — reads
+  `${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`
+  and renders via the kitty graphics protocol (or chafa fallback).
 - **Adapters** (`adapters/`) — per-agent capture. Today: `claude-code/`
-  (a Claude Code PostToolUse hook + plugin + skill).
+  (a PostToolUse hook + plugin + skill).
 
 Extracted from [lazytmux](https://github.com/noamsto/lazytmux), which consumes
 this repo as a flake input.
 
 ## Status
 
-Live standalone repo — the viewer binary, Claude Code capture adapter, and
-plugin skill all build and are consumed by
-[lazytmux](https://github.com/noamsto/lazytmux) as a flake input.
-
-See [docs/2026-06-10-design.md](docs/2026-06-10-design.md) for the design
-notes. Zoom/pan (Plan 2) is not yet implemented.
+Live standalone repo — the viewer binary, Claude Code capture adapter, and plugin
+skill all build and are consumed by
+[lazytmux](https://github.com/noamsto/lazytmux) as a flake input. Zoom/pan is not
+yet implemented; see [docs/2026-06-10-design.md](docs/2026-06-10-design.md) for
+the design notes.
