@@ -44,10 +44,14 @@ vertical letterbox. The preview box is ~16:9 (`previewBoxCols = 355`).
 **Fix — zoom-to-fill (snap):**
 
 - **Rest** (full crop): whole image, letterboxed — unchanged.
-- **First zoom-in from rest:** snap the crop to the largest box-aspect rectangle
-  centered in the image (full-height, ~25%-width slice for a 7:1 diagram), so it
-  fills the box. If the image aspect already ≈ the box (base-fill would be full),
-  skip the snap and fall through to a normal shrink — avoids getting stuck.
+- **Zoom-in while letterboxed:** snap the crop to the largest box-aspect rectangle
+  centered on the current view (full-height, ~25%-width slice for a 7:1 diagram),
+  so it fills the box. "Letterboxed" means the crop's pixel aspect doesn't match
+  the box — the rest view of a non-square image, *and* a region framed by Tab that
+  is wider or taller than the box (Tab keeps the whole region, so a wide step
+  group letterboxes). Triggering on fill-state rather than only the full crop is
+  what makes Tab-then-zoom fill instead of magnifying the strip. When the crop
+  already fills (square-ish image, or an already-snapped crop), skip the snap.
 - **Further zoom-in:** shrink the crop **uniformly** about its center (one
   clamped scale factor for both axes — replaces the current independent-axis
   clamp, which distorts). Floor the smaller fraction side at `1/zoomMax`.
