@@ -1,0 +1,133 @@
+# Installing agent-carousel (agent guide)
+
+A step-by-step install you can follow autonomously. After each step, **run the
+verification command and confirm the output** before moving on — don't assume.
+
+agent-carousel has two parts:
+
+1. **Two PATH binaries** — the `agent-carousel` viewer and the
+   `tmux-claude-images` toggle that opens it. The toggle launches the viewer
+   into a fresh tmux/kitty pane, which resolves `agent-carousel` from *that
+   pane's* PATH — so **both must be on PATH**, not just the toggle.
+2. **A capture adapter** — the Claude Code plugin (a PostToolUse hook) that
+   records every image the session touches into a per-pane manifest, so the
+   carousel has something to show.
+
+You need both: binaries to *render*, plugin to *capture*.
+
+## Step 0 — Check the host
+
+The carousel renders into a tmux split or a kitty window. It needs **one** of:
+
+- **tmux** — `[ -n "$TMUX" ]` is true, or `tmux info` succeeds.
+- **kitty with remote control** — `[ -n "$KITTY_LISTEN_ON" ]`, which requires
+  `allow_remote_control yes` + `listen_on …` in `kitty.conf`.
+
+```bash
+[ -n "$TMUX" ] && echo "host: tmux" || { [ -n "$KITTY_LISTEN_ON" ] && echo "host: kitty" || echo "NO HOST — install tmux or enable kitty remote control"; }
+```
+
+If neither is present the toggle just prints a hint and does nothing — fix the
+host before continuing.
+
+> Note: if you run tmux *inside* kitty, tmux always wins (the viewer opens as a
+> tmux split). The kitty-window path is only for kitty **without** tmux.
+
+## Step 1 — Install the two binaries
+
+Pick the method that fits the environment.
+
+**Nix (installs each separately — run both):**
+
+```bash
+nix profile install github:noamsto/agent-carousel          # viewer  (packages.default)
+nix profile install github:noamsto/agent-carousel#toggle   # toggle  (tmux-claude-images)
+```
+
+**Prebuilt release archive (contains both):** download the archive for the
+platform from <https://github.com/noamsto/agent-carousel/releases> and extract
+**both** binaries onto PATH.
+
+**Go (viewer only — still need the toggle):**
+
+```bash
+go install github.com/noamsto/agent-carousel@latest   # installs ONLY the viewer
+```
+
+If you use `go install`, get `tmux-claude-images` separately from the release
+archive or `scripts/tmux-claude-images.sh` in this repo, and put it on PATH.
+
+> Already running [lazytmux](https://github.com/noamsto/lazytmux)? Both binaries
+> are already on PATH and `prefix + I` is bound — skip to Step 3.
+
+### Verify
+
+```bash
+command -v agent-carousel && command -v tmux-claude-images && echo "OK: both on PATH"
+```
+
+Both paths must print. If only one does, the missing half isn't installed —
+revisit this step before continuing (the toggle is useless without the viewer,
+and vice-versa).
+
+## Step 2 — Optional dependencies
+
+- **`chafa`** — block-art fallback for terminals without the kitty graphics
+  protocol. Not needed on kitty/ghostty (they render directly). Install only if
+  the target terminal is neither.
+- **`d2` + `resvg`** — let the agent draw [D2](https://d2lang.com) diagrams that
+  render into the carousel. Without them the diagram hook no-ops silently;
+  install only if diagrams are wanted.
+
+```bash
+command -v chafa || echo "(optional) chafa not installed — needed only off kitty/ghostty"
+command -v d2 && command -v resvg && echo "diagrams: ready" || echo "(optional) diagrams need d2 + resvg"
+```
+
+## Step 3 — Install the Claude Code plugin (capture half)
+
+These are **Claude Code slash commands**, run inside the Claude Code session
+(not the shell):
+
+```
+/plugin marketplace add noamsto/agent-carousel
+/plugin install agent-carousel@agent-carousel
+```
+
+This repo doubles as its own single-plugin marketplace; both the marketplace and
+the plugin are named `agent-carousel`. The plugin only *captures* — opening the
+carousel still uses the `tmux-claude-images` binary from Step 1.
+
+## Step 4 — Smoke test
+
+1. Cause an image to be captured — e.g. have the session `Read` any
+   `.png`/`.jpg`, or take a screenshot. The hook appends it to the manifest at
+   `${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`.
+2. Confirm the manifest exists and is non-empty:
+
+   ```bash
+   ls -l "${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"/images/*.jsonl
+   ```
+
+3. Open the carousel:
+
+   ```bash
+   tmux-claude-images
+   ```
+
+   It should open a split/window showing a preview + filmstrip. Run it again to
+   close. (If no images are captured yet, in tmux it prints
+   `no images yet for this pane` — that's expected, not a failure.)
+
+**Done when:** both binaries are on PATH (Step 1), the plugin is installed
+(Step 3), and `tmux-claude-images` opens the carousel after an image is captured
+(Step 4).
+
+## Reference — environment variables
+
+| Variable | Purpose |
+|---|---|
+| `AGENT_CAROUSEL_BIN` | Override the viewer binary the toggle launches (default: `agent-carousel` on PATH). |
+| `AGENT_CAROUSEL_DIR` | State dir for manifests. Falls back to `CLAUDE_STATUS_DIR`, then `/tmp/claude-status`. |
+| `CLAUDE_STATUS_DIR` | Secondary state-dir fallback (shared with claude-status tooling). |
+| `AGENT_CAROUSEL_D2` / `AGENT_CAROUSEL_RESVG` | Override the `d2` / `resvg` binaries used for diagram rendering. |
