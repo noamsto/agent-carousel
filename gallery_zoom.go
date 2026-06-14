@@ -3,6 +3,9 @@ package main
 import (
 	"image"
 	"os"
+	"path/filepath"
+
+	"golang.org/x/image/draw"
 )
 
 // cropFrac is the visible sub-rectangle of the source image, in source
@@ -105,4 +108,26 @@ func cropPixels(b image.Rectangle, c cropFrac) image.Rectangle {
 		b.Min.X+int(c.x0*w), b.Min.Y+int(c.y0*h),
 		b.Min.X+int(c.x1*w), b.Min.Y+int(c.y1*h),
 	)
+}
+
+var zoomScratch = filepath.Join(os.TempDir(), "agent-carousel-zoom.png")
+
+// renderZoom crops m.curImg to m.crop, downscales the crop to the cols×rows cell
+// box, writes it to a fixed scratch PNG, and returns that path. Returns the raw
+// selected path when nothing is decoded or the crop is full (so the unzoomed
+// path is byte-for-byte the pre-zoom behavior).
+func (m *galleryModel) renderZoom(cols, rows int) string {
+	raw := m.images[m.cursor].Path
+	if m.curImg == nil || m.crop.isFull() {
+		return raw
+	}
+	r := cropPixels(m.curImg.Bounds(), m.crop)
+	tw, th := cols*cellPxW, rows*cellPxH
+	scale := min(float64(tw)/float64(r.Dx()), float64(th)/float64(r.Dy()))
+	if scale > 1 {
+		scale = 1 // never upscale past source resolution (bitmap layer; Layer 2 lifts this for d2)
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, int(float64(r.Dx())*scale), int(float64(r.Dy())*scale)))
+	draw.CatmullRom.Scale(dst, dst.Bounds(), m.curImg, r, draw.Src, nil)
+	return writePNG(zoomScratch, dst, raw)
 }
