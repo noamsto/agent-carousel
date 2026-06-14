@@ -183,10 +183,47 @@ func (m galleryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "right", "l", "down", "j":
+		case "l", "j":
 			m.selectIndex(m.cursor + 1)
-		case "left", "h", "up", "k":
+		case "h", "k":
 			m.selectIndex(m.cursor - 1)
+		case "right":
+			if !m.crop.isFull() {
+				m.panBy(0.1, 0)
+				m.transmitPreviewOnly()
+			} else {
+				m.selectIndex(m.cursor + 1)
+			}
+		case "left":
+			if !m.crop.isFull() {
+				m.panBy(-0.1, 0)
+				m.transmitPreviewOnly()
+			} else {
+				m.selectIndex(m.cursor - 1)
+			}
+		case "down":
+			if !m.crop.isFull() {
+				m.panBy(0, 0.1)
+				m.transmitPreviewOnly()
+			} else {
+				m.selectIndex(m.cursor + 1)
+			}
+		case "up":
+			if !m.crop.isFull() {
+				m.panBy(0, -0.1)
+				m.transmitPreviewOnly()
+			} else {
+				m.selectIndex(m.cursor - 1)
+			}
+		case "z", "+", "=":
+			m.zoomBy(1.25)
+			m.transmitPreviewOnly()
+		case "Z", "-", "_":
+			m.zoomBy(1 / 1.25)
+			m.transmitPreviewOnly()
+		case "0":
+			m.resetZoom()
+			m.transmitPreviewOnly()
 		case "n":
 			m.selectIndex(m.cursor + m.l.stripCols)
 		case "p":
