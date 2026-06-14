@@ -91,6 +91,7 @@ type galleryModel struct {
 	tty     *os.File // raw graphics sink (bypasses bubbletea's stdout)
 	mtime   int64    // manifest mtime at last load (for auto-refresh)
 	ready   bool
+	pinned  bool // follow the newest image until the user first navigates
 
 	// Theme colors, resolved once at startup (tmux options are session-invariant).
 	selColor, dimColor, hintFg, textFg imgcolor.Color
@@ -125,8 +126,10 @@ func (m *galleryModel) transmitView() {
 	}
 }
 
-// selectIndex moves the selection (clamped) and re-transmits.
+// selectIndex moves the selection (clamped) and re-transmits. Any manual
+// selection unpins, so streamed-in images stop stealing the cursor.
 func (m *galleryModel) selectIndex(idx int) {
+	m.pinned = false
 	idx = clamp(idx, 0, max(0, len(m.images)-1))
 	if idx != m.cursor {
 		m.cursor = idx
@@ -138,6 +141,9 @@ func (m *galleryModel) reload() {
 	m.mtime = manifestMtime(m.pane)
 	m.images = loadManifest(m.pane)
 	m.cursor = clamp(m.cursor, 0, max(0, len(m.images)-1))
+	if m.pinned {
+		m.cursor = max(0, len(m.images)-1)
+	}
 	if m.ready {
 		m.l = computeLayout(m.width, m.height)
 		m.transmitView()
@@ -276,7 +282,7 @@ func (m galleryModel) renderView() string {
 
 	// Centered key hints at the bottom.
 	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(
-		"↵/o open · O folder · h/l move · n/p page · q quit"))
+		"↵/o open · O folder · h/l move · n/p page · g/G first/last · q quit"))
 
 	return lipgloss.JoinVertical(lipgloss.Left, title, subtitle, previewArea, filmstrip, hints)
 }
@@ -310,13 +316,16 @@ func (m galleryModel) thmColor(opt, dark, light string) imgcolor.Color {
 // runGallery is the entry point called by main with the key/pane positional arg.
 func runGallery(pane string) error {
 	tty, _ := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
+	images := loadManifest(pane)
 	m := galleryModel{
 		pane:    pane,
-		images:  loadManifest(pane),
+		images:  images,
 		backend: chooseGridBackend(termName()),
 		theme:   detectTheme(),
 		tty:     tty,
 		mtime:   manifestMtime(pane),
+		cursor:  max(0, len(images)-1),
+		pinned:  true,
 	}
 	// Resolve theme colors once (each is a tmux subprocess; don't do it per frame).
 	m.selColor = m.thmColor("@thm_mauve", "#cba6f7", "#8839ef")
