@@ -35,27 +35,39 @@ host before continuing.
 
 ## Step 1 — Install the two binaries
 
-Pick the method that fits the environment.
+Pick the method that fits the environment. **Prefer prebuilt binaries unless Nix
+is already in use** — it's toolchain-free and ships both entrypoints.
 
-**Nix (installs each separately — run both):**
+**A. Prebuilt binaries (no toolchain — recommended default).** Linux/macOS,
+amd64/arm64. Downloads the viewer *and* the toggle:
+
+```bash
+os=$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$(uname -m)
+case "$arch" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; esac
+mkdir -p ~/.local/bin   # must be on PATH
+curl -fsSL "https://github.com/noamsto/agent-carousel/releases/latest/download/agent-carousel_${os}_${arch}.tar.gz" \
+  | tar -xz -C ~/.local/bin agent-carousel tmux-claude-images
+```
+
+(Or download an archive manually from
+<https://github.com/noamsto/agent-carousel/releases> and extract both onto PATH.)
+
+**B. Nix (each installs separately — run both):**
 
 ```bash
 nix profile install github:noamsto/agent-carousel          # viewer  (packages.default)
 nix profile install github:noamsto/agent-carousel#toggle   # toggle  (tmux-claude-images)
 ```
 
-**Prebuilt release archive (contains both):** download the archive for the
-platform from <https://github.com/noamsto/agent-carousel/releases> and extract
-**both** binaries onto PATH.
-
-**Go (viewer only — still need the toggle):**
+**C. Go (viewer only — still need the toggle):**
 
 ```bash
 go install github.com/noamsto/agent-carousel@latest   # installs ONLY the viewer
 ```
 
-If you use `go install`, get `tmux-claude-images` separately from the release
-archive or `scripts/tmux-claude-images.sh` in this repo, and put it on PATH.
+The toggle is a shell script, not a Go binary, so `go install` can't fetch it —
+get `tmux-claude-images` from the release archive (method A) or
+`scripts/tmux-claude-images.sh` in this repo, and put it on PATH.
 
 > Already running [lazytmux](https://github.com/noamsto/lazytmux)? Both binaries
 > are already on PATH and `prefix + I` is bound — skip to Step 3.
