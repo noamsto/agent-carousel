@@ -183,32 +183,31 @@ func (m galleryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "l", "j":
-			m.selectIndex(m.cursor + 1)
-		case "h", "k":
-			m.selectIndex(m.cursor - 1)
-		case "right":
+		// When zoomed, hjkl and the arrows pan; otherwise they navigate the
+		// filmstrip. To move to another image while zoomed, use n/p/g/G (which
+		// reset the crop) or 0/esc first.
+		case "right", "l":
 			if !m.crop.isFull() {
 				m.panBy(0.1, 0)
 				m.transmitPreviewOnly()
 			} else {
 				m.selectIndex(m.cursor + 1)
 			}
-		case "left":
+		case "left", "h":
 			if !m.crop.isFull() {
 				m.panBy(-0.1, 0)
 				m.transmitPreviewOnly()
 			} else {
 				m.selectIndex(m.cursor - 1)
 			}
-		case "down":
+		case "down", "j":
 			if !m.crop.isFull() {
 				m.panBy(0, 0.1)
 				m.transmitPreviewOnly()
 			} else {
 				m.selectIndex(m.cursor + 1)
 			}
-		case "up":
+		case "up", "k":
 			if !m.crop.isFull() {
 				m.panBy(0, -0.1)
 				m.transmitPreviewOnly()
@@ -221,20 +220,8 @@ func (m galleryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "Z", "-", "_":
 			m.zoomBy(1 / 1.25)
 			m.transmitPreviewOnly()
-		case "0":
+		case "0", "esc":
 			m.resetZoom()
-			m.transmitPreviewOnly()
-		case "alt+h":
-			m.panBy(-0.1, 0)
-			m.transmitPreviewOnly()
-		case "alt+l":
-			m.panBy(0.1, 0)
-			m.transmitPreviewOnly()
-		case "alt+k":
-			m.panBy(0, -0.1)
-			m.transmitPreviewOnly()
-		case "alt+j":
-			m.panBy(0, 0.1)
 			m.transmitPreviewOnly()
 		case "n":
 			m.selectIndex(m.cursor + m.l.stripCols)
@@ -344,7 +331,7 @@ func (m galleryModel) renderView() string {
 	// Centered key hints at the bottom.
 	hint := "↵/o open · O folder · h/l move · n/p page · g/G first/last · z/Z zoom · q quit"
 	if !m.crop.isFull() {
-		hint = "←↑↓→/⌥hjkl pan · z/Z zoom · 0 reset · q quit"
+		hint = "←↑↓→/hjkl pan · z/Z zoom · 0/esc reset · q quit"
 	}
 	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(hint))
 

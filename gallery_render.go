@@ -148,15 +148,6 @@ func transmitVirtual(id int, path string, cols, rows int) string {
 		id, cols, rows, enc))
 }
 
-// transmitVirtualUpdate replaces the image DATA for an existing id (a=t) without
-// deleting it or creating a new placement. kitty re-composites every placement
-// of the id when its data changes, so the preview refreshes in place on zoom/pan
-// with no blank frame — unlike a delete+re-transmit, which flickers.
-func transmitVirtualUpdate(id int, path string) string {
-	enc := base64.StdEncoding.EncodeToString([]byte(path))
-	return tmuxPassthrough(fmt.Sprintf("\x1b_Gi=%d,a=t,q=2,f=100,t=f;%s\x1b\\", id, enc))
-}
-
 // deleteAll removes all stored images + placements (kitty graphics a=d,d=A).
 // q=2 suppresses the response (see transmitVirtual).
 func deleteAll() string { return tmuxPassthrough("\x1b_Ga=d,d=A,q=2\x1b\\") }

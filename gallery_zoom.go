@@ -134,17 +134,19 @@ func (m *galleryModel) renderZoom(cols, rows int) string {
 		scale = 1 // never upscale past source resolution (bitmap layer; Layer 2 lifts this for d2)
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, int(float64(r.Dx())*scale), int(float64(r.Dy())*scale)))
-	draw.CatmullRom.Scale(dst, dst.Bounds(), m.curImg, r, draw.Src, nil)
-	return writePNG(m.zoomScratchPath(), dst, raw)
+	// ApproxBiLinear + fast PNG: this runs on every pan/zoom keystroke, so encode
+	// speed matters more than the last bit of quality or file size.
+	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), m.curImg, r, draw.Src, nil)
+	return writePNGEnc(m.zoomScratchPath(), dst, raw, fastPNG.Encode)
 }
 
-// transmitPreviewOnly re-renders the preview at the current crop and replaces
-// the preview image data in place (a=t). The placeholder cells from the initial
-// a=T placement (transmitView) re-render with the new data — no delete, so
-// zoom/pan refresh smoothly without a blank-frame flicker.
+// transmitPreviewOnly re-renders the preview at the current crop and re-places
+// it under the same id (a=T) WITHOUT deleting first. Re-placing in place keeps
+// the image visible (a data-only a=t update leaves the unicode placeholder
+// blank); skipping the delete avoids the blank-frame flicker on zoom/pan.
 func (m *galleryModel) transmitPreviewOnly() {
 	if m.backend != backendKitty || m.tty == nil || len(m.images) == 0 {
 		return
 	}
-	fmt.Fprint(m.tty, transmitVirtualUpdate(previewID, m.renderZoom(m.l.previewW, m.l.previewH)))
+	fmt.Fprint(m.tty, transmitVirtual(previewID, m.renderZoom(m.l.previewW, m.l.previewH), m.l.previewW, m.l.previewH))
 }
