@@ -32,16 +32,12 @@ the working project.
 
 ## House style
 
-Open every diagram with this header. It sets the look the carousel renders;
-paste it, then add your shapes below.
+The carousel hook applies the sketch look and the mode-appropriate theme to
+every render automatically — you do **not** put `sketch` or `theme` in the
+file. What you provide is `direction` and a role `classes` palette. Open each
+diagram with this block, then add your shapes:
 
 ```text
-vars: {
-  d2-config: {
-    sketch: true
-    pad: 16
-  }
-}
 # Role classes distinguish by stroke + shape (NOT fill) so they read on BOTH
 # the light and dark theme the carousel may render.
 classes: {
@@ -53,14 +49,15 @@ classes: {
 
 Why these choices:
 
-- **Sketch on** — the hand-drawn stroke reads as "explanatory sketch," not a
-  rigid spec, which is what a diagram in a chat usually is.
+- **Sketch + theme come from the hook** — the hand-drawn stroke reads as
+  "explanatory sketch," not a rigid spec. If you ever render a file by hand,
+  add `vars: { d2-config: { sketch: true; pad: 16 } }` to match; under the
+  carousel it's redundant.
 - **Role by stroke + shape, not fill** — the carousel may render light or dark,
   so a fill-coded legend can vanish against the background. A colored *stroke*
   and a distinct *shape* survive both. Reserve `fill` for the rare emphasis.
-- **A bare header has nothing to draw** — the block above is shown as `text`
-  on purpose. On its own (vars + classes, no shapes) it renders nothing; fold
-  it into a diagram that has shapes, as the worked examples do.
+- **A `classes` block alone draws nothing** — it's shown as `text` here on
+  purpose. Drop it into a diagram that has shapes, as the worked examples do.
 
 ## Flow direction
 
@@ -98,12 +95,13 @@ api -> client: response
 ## Rich constructs
 
 **Grouping** — wrap a subsystem in a container to give the layout structure and
-a labeled boundary; edges can cross in and out:
+a labeled boundary; edges can cross in and out. A container's name renders as a
+visible label on the boundary, so name it meaningfully (`backend`, not `g1`):
 
 ```d2
 direction: right
 gateway: API Gateway
-backend: Backend: {
+backend: Backend {
   auth: Auth
   orders: Orders
   auth -> orders: token
@@ -112,7 +110,8 @@ gateway -> backend.auth: request
 ```
 
 **ERDs** with `shape: sql_table` — fields take a type, and `constraint` renders
-as a PK/FK/UNQ badge. Add `layout-engine: elk` for row-precise FK edges:
+as a PK/FK/UNQ badge. Add `layout-engine: elk` for cleaner, orthogonal edge
+routing on multi-table ERDs:
 
 ```d2
 vars: { d2-config: { layout-engine: elk } }
@@ -154,8 +153,8 @@ classes: {
   svc:   { style: { stroke: "#1565C0"; stroke-width: 2 } }
   store: { shape: cylinder; style: { stroke: "#2E7D32"; stroke-width: 2 } }
 }
-api: API: { class: svc }
-db: Postgres: { class: store }
+api: API { class: svc }
+db: Postgres { class: store }
 api -> db: query
 ```
 
@@ -184,14 +183,14 @@ classes: {
   store: { shape: cylinder; style: { stroke: "#2E7D32"; stroke-width: 2 } }
   ext:   { style: { stroke: "#E65100"; stroke-width: 2; stroke-dash: 3 } }
 }
-web: Web App: { class: svc }
-core: Checkout: {
-  api: API: { class: svc }
-  worker: Worker: { class: svc }
+web: Web App { class: svc }
+core: Checkout {
+  api: API { class: svc }
+  worker: Worker { class: svc }
   api -> worker: enqueue job
 }
-db: Orders DB: { class: store }
-pay: Stripe: { class: ext }
+db: Orders DB { class: store }
+pay: Stripe { class: ext }
 web -> core.api: place order
 core.api -> db: write order
 core.worker -> pay: charge card
@@ -241,12 +240,12 @@ classes: {
   store: { shape: cylinder; style: { stroke: "#2E7D32"; stroke-width: 2 } }
 }
 ingest: Ingest
-transform: Transform: {
+transform: Transform {
   clean: Clean
   enrich: Enrich
   clean -> enrich
 }
-warehouse: Warehouse: { class: store }
+warehouse: Warehouse { class: store }
 alerts: Alerts
 ingest -> transform.clean: raw events
 transform.enrich -> warehouse: load
