@@ -381,7 +381,11 @@ func (m galleryModel) renderView() string {
 
 	// Centered key hints at the bottom.
 	hint := "↵/o open · O folder · h/l move · n/p page · g/G first/last · z/Z zoom · q quit"
-	if !m.crop.isFull() {
+	if m.regions != nil && m.regionIdx >= 0 {
+		if r, ok := m.focusedRegion(); ok {
+			hint = "region: " + r.path + " · ⇥ next · ] [ drill · esc exit"
+		}
+	} else if !m.crop.isFull() {
 		hint = "←↑↓→/hjkl pan · z/Z zoom · 0/esc reset · q quit"
 	}
 	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(hint))
