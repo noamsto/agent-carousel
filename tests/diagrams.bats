@@ -151,8 +151,14 @@ STUB
 	export AGENT_CAROUSEL_D2_THEME=200
 	run_app hook-write-d2.json
 	run cat "$D2_ARGLOG"
-	[[ $output == *"-t 200"* ]]
-	[[ $output == *"--sketch"* ]]
+	[[ $output == *"-t 200"* ]] || {
+		echo "missing -t 200 in: $output" >&2
+		return 1
+	}
+	[[ $output == *"--sketch"* ]] || {
+		echo "missing --sketch in: $output" >&2
+		return 1
+	}
 }
 
 @test "AGENT_CAROUSEL_D2_SKETCH=0 disables sketch" {
@@ -167,7 +173,10 @@ STUB
 	export AGENT_CAROUSEL_D2_SKETCH=0
 	run_app hook-write-d2.json
 	run cat "$D2_ARGLOG"
-	[[ $output != *"--sketch"* ]]
+	[[ $output != *"--sketch"* ]] || {
+		echo "unexpected --sketch in: $output" >&2
+		return 1
+	}
 }
 
 @test "font dir set -> resvg gets --skip-system-fonts --use-fonts-dir" {
@@ -182,6 +191,12 @@ STUB
 	mkdir -p "$AGENT_CAROUSEL_D2_FONT_DIR"
 	run_app hook-write-d2.json
 	run cat "$RESVG_ARGLOG"
-	[[ $output == *"--skip-system-fonts"* ]]
-	[[ $output == *"--use-fonts-dir $AGENT_CAROUSEL_D2_FONT_DIR"* ]]
+	[[ $output == *"--skip-system-fonts"* ]] || {
+		echo "missing --skip-system-fonts in: $output" >&2
+		return 1
+	}
+	[[ $output == *"--use-fonts-dir $AGENT_CAROUSEL_D2_FONT_DIR"* ]] || {
+		echo "missing --use-fonts-dir in: $output" >&2
+		return 1
+	}
 }

@@ -54,7 +54,13 @@ if [[ ! -f $png ]]; then
 	fi
 
 	# resvg can't use d2's embedded @font-face fonts; rewrite to an installed family.
-	bash "$(dirname "${BASH_SOURCE[0]}")/d2-fix-fonts.sh" "$svg"
+	if ! bash "$(dirname "${BASH_SOURCE[0]}")/d2-fix-fonts.sh" "$svg" 2>>"$err"; then
+		printf -v now '%(%FT%T%z)T' -1
+		printf '%s\t%s\t%s\n' "$now" "$hash" "$(tr '\n' ' ' <"$err")" \
+			>>"$DIAGRAMS_DIR/render-errors.log"
+		rm -f "$svg" "$err"
+		exit 0
+	fi
 
 	resvg_args=()
 	if [[ -n ${AGENT_CAROUSEL_D2_FONT_DIR:-} ]]; then
