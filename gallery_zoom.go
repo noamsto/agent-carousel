@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"golang.org/x/image/draw"
 )
@@ -48,9 +49,9 @@ func recenterScaled(cx, cy, w, h float64) cropFrac {
 	return cropFrac{x0, y0, x0 + w, y0 + h}
 }
 
-// zoomBy scales the crop about its center by 1/factor (factor > 1 zooms in),
-// preserving the crop's current aspect. The crop side is clamped to
-// [1/zoomMax, 1]; reaching full snaps to fullCrop.
+// zoomBy scales the crop about its center by 1/factor (factor > 1 zooms in).
+// Aspect is preserved only when w == h; independent per-axis clamping at the
+// extremes ([1/zoomMax, 1]) can distort a non-square crop.
 func (m *galleryModel) zoomBy(factor float64) {
 	const minSide = 1.0 / zoomMax
 	w := clampF(m.crop.w()/factor, minSide, 1)
@@ -85,7 +86,6 @@ func (m *galleryModel) ensureDecoded() {
 	if p == m.curImgPath {
 		return
 	}
-	m.curImgPath = p
 	m.resetZoom()
 	f, err := os.Open(p)
 	if err != nil {
@@ -99,6 +99,7 @@ func (m *galleryModel) ensureDecoded() {
 		return
 	}
 	m.curImg = img
+	m.curImgPath = p
 }
 
 // cropPixels maps a normalized crop to a pixel rectangle inside b, offset by
@@ -111,7 +112,11 @@ func cropPixels(b image.Rectangle, c cropFrac) image.Rectangle {
 	)
 }
 
-var zoomScratch = filepath.Join(os.TempDir(), "agent-carousel-zoom.png")
+// zoomScratchPath is a per-pane scratch file so concurrently-zoomed panes don't
+// overwrite each other's preview render.
+func (m *galleryModel) zoomScratchPath() string {
+	return filepath.Join(os.TempDir(), "agent-carousel-zoom-"+strings.TrimPrefix(m.pane, "%")+".png")
+}
 
 // renderZoom crops m.curImg to m.crop, downscales the crop to the cols×rows cell
 // box, writes it to a fixed scratch PNG, and returns that path. Returns the raw
@@ -130,7 +135,7 @@ func (m *galleryModel) renderZoom(cols, rows int) string {
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, int(float64(r.Dx())*scale), int(float64(r.Dy())*scale)))
 	draw.CatmullRom.Scale(dst, dst.Bounds(), m.curImg, r, draw.Src, nil)
-	return writePNG(zoomScratch, dst, raw)
+	return writePNG(m.zoomScratchPath(), dst, raw)
 }
 
 // deletePreview clears just the preview image (id=previewID) + its placements,

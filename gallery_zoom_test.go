@@ -76,8 +76,8 @@ func TestZoomByClampsAtMax(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		m.zoomBy(1.25)
 	}
-	if !approx(m.crop.w(), 1.0/zoomMax) {
-		t.Errorf("zoom must clamp to min side 1/%v, got w=%v", zoomMax, m.crop.w())
+	if !approx(m.crop.w(), 1.0/zoomMax) || !approx(m.crop.h(), 1.0/zoomMax) {
+		t.Errorf("zoom must clamp to min side 1/%v, got w=%v h=%v", zoomMax, m.crop.w(), m.crop.h())
 	}
 }
 
@@ -111,5 +111,17 @@ func TestEnsureDecodedPreservesOnSamePath(t *testing.T) {
 	m.ensureDecoded() // same path → must not reset the crop
 	if m.crop.isFull() {
 		t.Errorf("same-path decode reset the crop: %+v", m.crop)
+	}
+}
+
+func TestEnsureDecodedCropResetOnNewPath(t *testing.T) {
+	m := &galleryModel{
+		images:     []imageEntry{{Path: "/nope/new.png"}},
+		curImgPath: "/nope/old.png",
+		crop:       cropFrac{0.2, 0.2, 0.5, 0.5},
+	}
+	m.ensureDecoded() // path changed → crop must reset even though decode fails
+	if !m.crop.isFull() {
+		t.Errorf("new path must reset crop, got %+v", m.crop)
 	}
 }
