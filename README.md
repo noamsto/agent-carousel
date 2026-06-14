@@ -41,18 +41,35 @@ what your agent is doing without leaving the terminal.
 ## Install
 
 Two PATH entrypoints — the `agent-carousel` viewer and the `tmux-claude-images`
-toggle that opens it. Put **both** on your PATH (the toggle launches the viewer
-into a fresh pane, which resolves `agent-carousel` from that pane's PATH).
+toggle that opens it. Install **both** (the toggle launches the viewer into a
+fresh pane, which resolves `agent-carousel` from that pane's PATH).
+
+**Prebuilt binaries** — no toolchain, Linux/macOS · amd64/arm64. Downloads both
+entrypoints:
+
+```bash
+os=$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$(uname -m)
+case $arch in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; esac
+mkdir -p ~/.local/bin   # ensure this is on your PATH
+curl -fsSL "https://github.com/noamsto/agent-carousel/releases/latest/download/agent-carousel_${os}_${arch}.tar.gz" \
+  | tar -xz -C ~/.local/bin agent-carousel tmux-claude-images
+```
+
+(Or download an archive from the [releases page](https://github.com/noamsto/agent-carousel/releases) and extract both onto your PATH.)
+
+**Nix:**
 
 ```bash
 nix profile install github:noamsto/agent-carousel          # viewer
 nix profile install github:noamsto/agent-carousel#toggle   # toggle
 ```
 
-Or grab the prebuilt archive (both binaries) from the
-[releases page](https://github.com/noamsto/agent-carousel/releases) and extract
-onto your PATH. `go install github.com/noamsto/agent-carousel@latest` works too,
-but installs only the viewer.
+**Go** — viewer only; pair it with the toggle from the release archive or
+`scripts/tmux-claude-images.sh`:
+
+```bash
+go install github.com/noamsto/agent-carousel@latest
+```
 
 Then install the **capture** half — the Claude Code plugin (run inside Claude
 Code, not the shell):
