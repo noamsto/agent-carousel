@@ -257,6 +257,30 @@ func (t *regionTree) childrenOf(path []string) []region {
 	return t.byParent[strings.Join(path, ".")]
 }
 
+const framePadding = 1.1 // ~10% margin around the framed region
+
+// frameRegion returns the crop (source fractions) that frames r to the preview
+// box. It matches the crop's *pixel* aspect to the box (the crop is letterboxed
+// into the box, so this fills it) by folding in the source aspect, then takes
+// the smallest such rect containing r (with padding), centered on r, clamped to
+// [0,1].
+func frameRegion(r region, srcW, srcH, boxW, boxH int) cropFrac {
+	rw, rh := (r.x1-r.x0)*framePadding, (r.y1-r.y0)*framePadding
+	// desired cropW_frac/cropH_frac so (cropW·srcW)/(cropH·srcH) == boxW/boxH.
+	targetFrac := (float64(boxW) * float64(srcH)) / (float64(boxH) * float64(srcW))
+	cropW, cropH := rw, rh
+	if rw/rh < targetFrac {
+		cropW = rh * targetFrac
+	} else {
+		cropH = rw / targetFrac
+	}
+	cropW = math.Min(cropW, 1)
+	cropH = math.Min(cropH, 1)
+	x0 := clampF(r.cx()-cropW/2, 0, 1-cropW)
+	y0 := clampF(r.cy()-cropH/2, 0, 1-cropH)
+	return cropFrac{x0, y0, x0 + cropW, y0 + cropH}
+}
+
 // sortSpatial orders regions top-to-bottom then left-to-right, so Tab advances
 // in reading order. The 0.05 band tolerates minor vertical misalignment.
 func sortSpatial(rs []region) {

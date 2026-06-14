@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"os"
 	"testing"
 )
@@ -74,5 +75,34 @@ func TestRegionTreeDrill(t *testing.T) {
 	}
 	if len(tr.childrenOf([]string{"store"})) != 0 {
 		t.Error("store should be a leaf")
+	}
+}
+
+func TestFrameRegionContainsAndAspect(t *testing.T) {
+	// landscape source 2000x1000, landscape box 800x400 → target frac-aspect = (800*1000)/(400*2000) = 1.0
+	r := region{x0: 0.4, y0: 0.45, x1: 0.6, y1: 0.55}
+	c := frameRegion(r, 2000, 1000, 800, 400)
+	if !(c.x0 <= r.x0 && c.x1 >= r.x1 && c.y0 <= r.y0 && c.y1 >= r.y1) {
+		t.Errorf("crop must contain region: %+v vs %+v", c, r)
+	}
+	if math.Abs(c.cx()-r.cx()) > 1e-9 || math.Abs(c.cy()-r.cy()) > 1e-9 {
+		t.Errorf("crop not centered on region: %+v", c)
+	}
+	if af := c.w() / c.h(); math.Abs(af-1.0) > 1e-6 {
+		t.Errorf("crop frac-aspect = %v, want 1.0", af)
+	}
+	if c.x0 < -1e-9 || c.y0 < -1e-9 || c.x1 > 1+1e-9 || c.y1 > 1+1e-9 {
+		t.Errorf("crop escaped [0,1]: %+v", c)
+	}
+}
+
+func TestFrameRegionClampsAtEdge(t *testing.T) {
+	r := region{x0: 0, y0: 0, x1: 0.2, y1: 0.2}
+	c := frameRegion(r, 1000, 1000, 400, 400)
+	if c.x0 < -1e-9 || c.y0 < -1e-9 {
+		t.Errorf("corner crop must clamp to 0: %+v", c)
+	}
+	if !(c.x1 >= r.x1 && c.y1 >= r.y1) {
+		t.Errorf("crop must still contain region after clamp: %+v", c)
 	}
 }
