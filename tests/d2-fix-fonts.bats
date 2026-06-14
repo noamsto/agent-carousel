@@ -4,6 +4,7 @@ setup() {
 	APP="$(dirname "$BATS_TEST_DIRNAME")/adapters/claude-code/plugin/scripts/d2-fix-fonts.sh"
 	SVG="$BATS_TEST_TMPDIR/s.svg"
 	cp "$BATS_TEST_DIRNAME/fixtures/d2-fonts-sample.svg" "$SVG"
+	unset AGENT_CAROUSEL_D2_FONT
 }
 
 @test "removes every synthetic d2 font-family name" {
