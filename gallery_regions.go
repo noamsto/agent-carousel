@@ -291,3 +291,82 @@ func sortSpatial(rs []region) {
 		return rs[i].cx() < rs[j].cx()
 	})
 }
+
+// focusedRegion returns the region currently focused at the drill level.
+func (m *galleryModel) focusedRegion() (region, bool) {
+	if m.regions == nil || m.regionIdx < 0 {
+		return region{}, false
+	}
+	sibs := m.regions.childrenOf(m.regionPath)
+	if m.regionIdx >= len(sibs) {
+		return region{}, false
+	}
+	return sibs[m.regionIdx], true
+}
+
+// cycleRegion focuses the next (+1) / previous (-1) sibling at the current level,
+// wrapping. The first call (regionIdx<0) enters region mode at index 0. Frames
+// the focus.
+func (m *galleryModel) cycleRegion(dir int) {
+	sibs := m.regions.childrenOf(m.regionPath)
+	if len(sibs) == 0 {
+		return
+	}
+	if m.regionIdx < 0 {
+		m.regionIdx = 0
+	} else {
+		m.regionIdx = (m.regionIdx + dir + len(sibs)) % len(sibs)
+	}
+	m.frameFocused()
+}
+
+// drillIn descends into the focused container so its children become the cycle
+// set; no-op when the focus is a leaf.
+func (m *galleryModel) drillIn() {
+	r, ok := m.focusedRegion()
+	if !ok {
+		return
+	}
+	child := strings.Split(r.path, ".")
+	if len(m.regions.childrenOf(child)) == 0 {
+		return // leaf
+	}
+	m.regionPath = child
+	m.regionIdx = 0
+	m.frameFocused()
+}
+
+// drillOut ascends to the parent level, re-focusing the container we came from.
+func (m *galleryModel) drillOut() {
+	if len(m.regionPath) == 0 {
+		return
+	}
+	came := strings.Join(m.regionPath, ".")
+	m.regionPath = m.regionPath[:len(m.regionPath)-1]
+	sibs := m.regions.childrenOf(m.regionPath)
+	m.regionIdx = 0
+	for i, r := range sibs {
+		if r.path == came {
+			m.regionIdx = i
+			break
+		}
+	}
+	m.frameFocused()
+}
+
+// exitRegions leaves region mode and resets to fit-all.
+func (m *galleryModel) exitRegions() {
+	m.regionPath, m.regionIdx = nil, -1
+	m.resetZoom()
+}
+
+// frameFocused sets the crop to frame the focused region, using the decoded
+// image's pixel dims as the source size. No-op when nothing is decoded.
+func (m *galleryModel) frameFocused() {
+	r, ok := m.focusedRegion()
+	if !ok || m.curImg == nil {
+		return
+	}
+	b := m.curImg.Bounds()
+	m.crop = frameRegion(r, b.Dx(), b.Dy(), m.l.previewW*cellPxW, m.l.previewH*cellPxH)
+}

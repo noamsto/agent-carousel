@@ -96,6 +96,9 @@ type galleryModel struct {
 	crop       cropFrac    // visible sub-rectangle of the source (fullCrop = fit)
 	curImg     image.Image // decoded source of the current selection
 	curImgPath string      // path curImg was decoded from
+	regions    *regionTree // parsed lazily for the current d2 entry; nil when none
+	regionPath []string    // current drill level (container path components); empty = root
+	regionIdx  int         // focused sibling index at the current level; -1 = not in region mode
 
 	// Theme colors, resolved once at startup (tmux options are session-invariant).
 	selColor, dimColor, hintFg, textFg imgcolor.Color

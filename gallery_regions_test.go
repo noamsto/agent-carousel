@@ -106,3 +106,44 @@ func TestFrameRegionClampsAtEdge(t *testing.T) {
 		t.Errorf("crop must still contain region after clamp: %+v", c)
 	}
 }
+
+func TestRegionModeCycleAndDrill(t *testing.T) {
+	rs := []region{
+		{path: "ingest", x0: 0, y0: 0, x1: 0.4, y1: 1},
+		{path: "store", x0: 0.6, y0: 0, x1: 1, y1: 1},
+		{path: "ingest.read", x0: 0.05, y0: 0.1, x1: 0.35, y1: 0.4},
+		{path: "ingest.parse", x0: 0.05, y0: 0.6, x1: 0.35, y1: 0.9},
+	}
+	m := &galleryModel{regions: newRegionTree(rs), regionIdx: -1, l: layout{previewW: 80, previewH: 40}}
+
+	m.cycleRegion(+1)
+	if r, ok := m.focusedRegion(); !ok || r.path != "ingest" {
+		t.Fatalf("first focus = %v,%v", r.path, ok)
+	}
+	m.cycleRegion(+1)
+	if r, _ := m.focusedRegion(); r.path != "store" {
+		t.Fatalf("cycle → %v, want store", r.path)
+	}
+	m.cycleRegion(+1)
+	if r, _ := m.focusedRegion(); r.path != "ingest" {
+		t.Fatalf("wrap → %v, want ingest", r.path)
+	}
+	m.drillIn()
+	if r, ok := m.focusedRegion(); !ok || r.path != "ingest.read" {
+		t.Fatalf("drillIn focus = %v,%v", r.path, ok)
+	}
+	m.drillOut()
+	if r, _ := m.focusedRegion(); r.path != "ingest" {
+		t.Fatalf("drillOut focus = %v, want ingest", r.path)
+	}
+}
+
+func TestDrillInLeafNoOp(t *testing.T) {
+	rs := []region{{path: "store", x0: 0.6, y0: 0, x1: 1, y1: 1}}
+	m := &galleryModel{regions: newRegionTree(rs), regionIdx: -1, l: layout{previewW: 80, previewH: 40}}
+	m.cycleRegion(+1)
+	m.drillIn()
+	if r, _ := m.focusedRegion(); r.path != "store" {
+		t.Fatalf("leaf drillIn moved focus to %v", r.path)
+	}
+}
