@@ -62,6 +62,8 @@ launch_kitty() {
 	# active one. --match selects that tab as the launch target (a remote-control
 	# --next-to is ignored across tabs without it); --next-to places the split
 	# beside Claude; --keep-focus so opening it never steals focus.
+	# Verified over the live RC socket: a window launched with these flags lands
+	# in the target's tab (not the active one) and leaves focus where it was.
 	local placement=()
 	if [[ -n ${KITTY_WINDOW_ID:-} ]]; then
 		placement=(--match "window_id:$KITTY_WINDOW_ID" --next-to "id:$KITTY_WINDOW_ID" --keep-focus)
