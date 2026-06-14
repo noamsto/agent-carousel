@@ -75,11 +75,11 @@ run_app() { # $1 = fixture name
 	[ "$output" = "$IMG" ]
 }
 
-@test "AGENT_CAROUSEL_DIR takes precedence over CLAUDE_STATUS_DIR" {
+@test "AEYE_DIR takes precedence over CLAUDE_STATUS_DIR" {
 	# CLAUDE_STATUS_DIR is already exported by setup(); set the override too.
-	export AGENT_CAROUSEL_DIR="$BATS_TEST_TMPDIR/carousel"
+	export AEYE_DIR="$BATS_TEST_TMPDIR/carousel"
 	run_app hook-read-image.json
-	[ -f "$AGENT_CAROUSEL_DIR/images/7.jsonl" ]
+	[ -f "$AEYE_DIR/images/7.jsonl" ]
 	[ ! -f "$MANIFEST" ]
 }
 

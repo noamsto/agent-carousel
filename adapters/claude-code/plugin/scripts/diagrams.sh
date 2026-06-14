@@ -4,7 +4,7 @@
 # Mirrors images.sh — self-contained, keyed by $TMUX_PANE or $CLAUDE_CODE_SESSION_ID.
 set -euo pipefail
 
-STATE_DIR="${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
+STATE_DIR="${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
 IMAGES_DIR="$STATE_DIR/images"
 DIAGRAMS_DIR="$IMAGES_DIR/diagrams"
 
@@ -37,14 +37,14 @@ manifest="$IMAGES_DIR/$pane_file.jsonl"
 # Render only when the PNG is absent (identical source is a no-op; an edited
 # diagram hashes differently). Renderers absent -> silent no-op.
 if [[ ! -f $png ]]; then
-	d2_bin="${AGENT_CAROUSEL_D2:-d2}"
-	resvg_bin="${AGENT_CAROUSEL_RESVG:-resvg}"
+	d2_bin="${AEYE_D2:-d2}"
+	resvg_bin="${AEYE_RESVG:-resvg}"
 	command -v "$d2_bin" >/dev/null 2>&1 || exit 0
 	command -v "$resvg_bin" >/dev/null 2>&1 || exit 0
 	err="$DIAGRAMS_DIR/$hash.err"
 
-	d2_args=(-t "${AGENT_CAROUSEL_D2_THEME:-105}")
-	[[ ${AGENT_CAROUSEL_D2_SKETCH:-1} != 0 ]] && d2_args+=(--sketch)
+	d2_args=(-t "${AEYE_D2_THEME:-105}")
+	[[ ${AEYE_D2_SKETCH:-1} != 0 ]] && d2_args+=(--sketch)
 	if ! "$d2_bin" "${d2_args[@]}" "$candidate" "$svg" 2>"$err"; then
 		printf -v now '%(%FT%T%z)T' -1
 		printf '%s\t%s\t%s\n' "$now" "$hash" "$(tr '\n' ' ' <"$err")" \
@@ -63,8 +63,8 @@ if [[ ! -f $png ]]; then
 	fi
 
 	resvg_args=()
-	if [[ -n ${AGENT_CAROUSEL_D2_FONT_DIR:-} ]]; then
-		resvg_args+=(--skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR")
+	if [[ -n ${AEYE_D2_FONT_DIR:-} ]]; then
+		resvg_args+=(--skip-system-fonts --use-fonts-dir "$AEYE_D2_FONT_DIR")
 	fi
 	if ! "$resvg_bin" "${resvg_args[@]}" "$svg" "$png" 2>>"$err"; then
 		printf -v now '%(%FT%T%z)T' -1
@@ -92,6 +92,6 @@ jq -nc --arg path "$png" --arg vector "$svg" --arg source "d2" --arg ts "$now" -
 # that, leave open/closed state under user control (--ensure-open never kills).
 marker="$IMAGES_DIR/$pane_file.opened"
 if [[ ! -f $marker ]]; then
-	"${AGENT_CAROUSEL_TOGGLE:-tmux-claude-images}" --ensure-open >/dev/null 2>&1 || true
+	"${AEYE_TOGGLE:-tmux-claude-images}" --ensure-open >/dev/null 2>&1 || true
 	: >"$marker"
 fi

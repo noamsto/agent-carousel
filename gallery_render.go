@@ -40,9 +40,9 @@ func parseManifest(data []byte) []imageEntry {
 }
 
 // manifestPath is images/<pane>.jsonl (leading % stripped) under the carousel
-// status dir (AGENT_CAROUSEL_DIR, then CLAUDE_STATUS_DIR, then /tmp/claude-status).
+// status dir (AEYE_DIR, then CLAUDE_STATUS_DIR, then /tmp/claude-status).
 func manifestPath(pane string) string {
-	dir := os.Getenv("AGENT_CAROUSEL_DIR")
+	dir := os.Getenv("AEYE_DIR")
 	if dir == "" {
 		dir = os.Getenv("CLAUDE_STATUS_DIR")
 	}

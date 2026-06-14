@@ -1,11 +1,13 @@
 <div align="center">
 
-# 🎠 agent-carousel
+# 👁️ aeye
 
 **A terminal image carousel for coding agents** — browse every screenshot,
 render, and image your agent touches, without leaving the terminal.
 
-[![CI](https://github.com/noamsto/agent-carousel/actions/workflows/ci.yml/badge.svg)](https://github.com/noamsto/agent-carousel/actions/workflows/ci.yml)
+*aeye* = "agent eye" — every agent needs aeye.
+
+[![CI](https://github.com/noamsto/aeye/actions/workflows/ci.yml/badge.svg)](https://github.com/noamsto/aeye/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](go.mod)
 
@@ -40,9 +42,9 @@ what your agent is doing without leaving the terminal.
 
 ## Install
 
-Two PATH entrypoints — the `agent-carousel` viewer and the `tmux-claude-images`
+Two PATH entrypoints — the `aeye` viewer and the `tmux-claude-images`
 toggle that opens it. Install **both** (the toggle launches the viewer into a
-fresh pane, which resolves `agent-carousel` from that pane's PATH).
+fresh pane, which resolves `aeye` from that pane's PATH).
 
 **Prebuilt binaries** — no toolchain, Linux/macOS · amd64/arm64. Downloads both
 entrypoints:
@@ -51,32 +53,32 @@ entrypoints:
 os=$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$(uname -m)
 case $arch in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; esac
 mkdir -p ~/.local/bin   # ensure this is on your PATH
-curl -fsSL "https://github.com/noamsto/agent-carousel/releases/latest/download/agent-carousel_${os}_${arch}.tar.gz" \
-  | tar -xz -C ~/.local/bin agent-carousel tmux-claude-images
+curl -fsSL "https://github.com/noamsto/aeye/releases/latest/download/aeye_${os}_${arch}.tar.gz" \
+  | tar -xz -C ~/.local/bin aeye tmux-claude-images
 ```
 
-(Or download an archive from the [releases page](https://github.com/noamsto/agent-carousel/releases) and extract both onto your PATH.)
+(Or download an archive from the [releases page](https://github.com/noamsto/aeye/releases) and extract both onto your PATH.)
 
 **Nix:**
 
 ```bash
-nix profile install github:noamsto/agent-carousel          # viewer
-nix profile install github:noamsto/agent-carousel#toggle   # toggle
+nix profile install github:noamsto/aeye          # viewer
+nix profile install github:noamsto/aeye#toggle   # toggle
 ```
 
 **Go** — viewer only; pair it with the toggle from the release archive or
 `scripts/tmux-claude-images.sh`:
 
 ```bash
-go install github.com/noamsto/agent-carousel@latest
+go install github.com/noamsto/aeye@latest
 ```
 
 Then install the **capture** half — the Claude Code plugin (run inside Claude
 Code, not the shell):
 
 ```
-/plugin marketplace add noamsto/agent-carousel
-/plugin install agent-carousel@agent-carousel
+/plugin marketplace add noamsto/aeye
+/plugin install aeye@aeye
 ```
 
 > 📖 **Step-by-step, agent-friendly guide:** [`docs/INSTALL.md`](docs/INSTALL.md)
@@ -126,7 +128,7 @@ the stable interface. Each agent gets a small **capture adapter** that appends t
 the manifest; the viewer never changes.
 
 - **Viewer** (Go binary) — reads
-  `${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`
+  `${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`
   and renders via the kitty graphics protocol (or chafa fallback).
 - **Adapters** (`adapters/`) — per-agent capture. Today: `claude-code/`
   (a PostToolUse hook + plugin + skill).

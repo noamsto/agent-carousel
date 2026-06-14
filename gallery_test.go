@@ -157,7 +157,7 @@ not json
 
 func TestLoadManifestDropsUndecodableFiles(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("AGENT_CAROUSEL_DIR", dir)
+	t.Setenv("AEYE_DIR", dir)
 	if err := os.MkdirAll(filepath.Join(dir, "images"), 0o755); err != nil {
 		t.Fatal(err)
 	}

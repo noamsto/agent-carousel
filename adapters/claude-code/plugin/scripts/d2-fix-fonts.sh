@@ -5,7 +5,7 @@
 set -euo pipefail
 
 svg="$1"
-family="${AGENT_CAROUSEL_D2_FONT:-Noto Sans}"
+family="${AEYE_D2_FONT:-Noto Sans}"
 
 # Family-remap runs first. The bold/italic injections anchor only on the
 # rule's brace (d2 puts font-family on the next line, so a same-line anchor

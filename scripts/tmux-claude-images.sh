@@ -5,11 +5,11 @@
 #     Keyed by $TMUX_PANE.
 #   - Outside tmux, in kitty with remote control: toggle a split window via
 #     `kitty @ launch`. Keyed by $CLAUDE_CODE_SESSION_ID.
-# The carousel binary ($AGENT_CAROUSEL_BIN, default `agent-carousel` on PATH)
+# The carousel binary ($AEYE_BIN, default `aeye` on PATH)
 # and manifest format are shared.
 set -euo pipefail
 
-STATE_DIR="${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
+STATE_DIR="${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"
 IMAGES_DIR="$STATE_DIR/images"
 ENSURE_OPEN=""
 
@@ -45,7 +45,7 @@ launch_tmux() {
 	# Anchor the split to Claude's pane (-t) so it lands in Claude's window even
 	# if the user has switched away; -d so opening it never yanks their focus.
 	local viewer
-	viewer="$(tmux split-window -h -d -t "$KEY" -P -F '#{pane_id}' "${AGENT_CAROUSEL_BIN:-agent-carousel} '$KEY'")"
+	viewer="$(tmux split-window -h -d -t "$KEY" -P -F '#{pane_id}' "${AEYE_BIN:-aeye} '$KEY'")"
 	tmux set-option -p -t "$viewer" @claude_img_src "$KEY"
 }
 
@@ -69,9 +69,9 @@ launch_kitty() {
 		placement=(--match "window_id:$KITTY_WINDOW_ID" --next-to "id:$KITTY_WINDOW_ID" --keep-focus)
 	fi
 	kitty @ launch --type=window ${placement[@]+"${placement[@]}"} --var claude_img_src="$KEY" \
-		--env AGENT_CAROUSEL_DIR="$STATE_DIR" \
+		--env AEYE_DIR="$STATE_DIR" \
 		--env CLAUDE_STATUS_DIR="$STATE_DIR" \
-		"${AGENT_CAROUSEL_BIN:-agent-carousel}" "$KEY" >/dev/null
+		"${AEYE_BIN:-aeye}" "$KEY" >/dev/null
 }
 
 main() {

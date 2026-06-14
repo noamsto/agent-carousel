@@ -1,13 +1,13 @@
-# Installing agent-carousel (agent guide)
+# Installing aeye (agent guide)
 
 A step-by-step install you can follow autonomously. After each step, **run the
 verification command and confirm the output** before moving on — don't assume.
 
-agent-carousel has two parts:
+aeye has two parts:
 
-1. **Two PATH binaries** — the `agent-carousel` viewer and the
+1. **Two PATH binaries** — the `aeye` viewer and the
    `tmux-claude-images` toggle that opens it. The toggle launches the viewer
-   into a fresh tmux/kitty pane, which resolves `agent-carousel` from *that
+   into a fresh tmux/kitty pane, which resolves `aeye` from *that
    pane's* PATH — so **both must be on PATH**, not just the toggle.
 2. **A capture adapter** — the Claude Code plugin (a PostToolUse hook) that
    records every image the session touches into a per-pane manifest, so the
@@ -45,24 +45,24 @@ amd64/arm64. Downloads the viewer *and* the toggle:
 os=$(uname -s | tr '[:upper:]' '[:lower:]'); arch=$(uname -m)
 case "$arch" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; esac
 mkdir -p ~/.local/bin   # must be on PATH
-curl -fsSL "https://github.com/noamsto/agent-carousel/releases/latest/download/agent-carousel_${os}_${arch}.tar.gz" \
-  | tar -xz -C ~/.local/bin agent-carousel tmux-claude-images
+curl -fsSL "https://github.com/noamsto/aeye/releases/latest/download/aeye_${os}_${arch}.tar.gz" \
+  | tar -xz -C ~/.local/bin aeye tmux-claude-images
 ```
 
 (Or download an archive manually from
-<https://github.com/noamsto/agent-carousel/releases> and extract both onto PATH.)
+<https://github.com/noamsto/aeye/releases> and extract both onto PATH.)
 
 **B. Nix (each installs separately — run both):**
 
 ```bash
-nix profile install github:noamsto/agent-carousel          # viewer  (packages.default)
-nix profile install github:noamsto/agent-carousel#toggle   # toggle  (tmux-claude-images)
+nix profile install github:noamsto/aeye          # viewer  (packages.default)
+nix profile install github:noamsto/aeye#toggle   # toggle  (tmux-claude-images)
 ```
 
 **C. Go (viewer only — still need the toggle):**
 
 ```bash
-go install github.com/noamsto/agent-carousel@latest   # installs ONLY the viewer
+go install github.com/noamsto/aeye@latest   # installs ONLY the viewer
 ```
 
 The toggle is a shell script, not a Go binary, so `go install` can't fetch it —
@@ -75,7 +75,7 @@ get `tmux-claude-images` from the release archive (method A) or
 ### Verify
 
 ```bash
-command -v agent-carousel && command -v tmux-claude-images && echo "OK: both on PATH"
+command -v aeye && command -v tmux-claude-images && echo "OK: both on PATH"
 ```
 
 Both paths must print. If only one does, the missing half isn't installed —
@@ -102,23 +102,23 @@ These are **Claude Code slash commands**, run inside the Claude Code session
 (not the shell):
 
 ```
-/plugin marketplace add noamsto/agent-carousel
-/plugin install agent-carousel@agent-carousel
+/plugin marketplace add noamsto/aeye
+/plugin install aeye@aeye
 ```
 
 This repo doubles as its own single-plugin marketplace; both the marketplace and
-the plugin are named `agent-carousel`. The plugin only *captures* — opening the
+the plugin are named `aeye`. The plugin only *captures* — opening the
 carousel still uses the `tmux-claude-images` binary from Step 1.
 
 ## Step 4 — Smoke test
 
 1. Cause an image to be captured — e.g. have the session `Read` any
    `.png`/`.jpg`, or take a screenshot. The hook appends it to the manifest at
-   `${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`.
+   `${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<pane>.jsonl`.
 2. Confirm the manifest exists and is non-empty:
 
    ```bash
-   ls -l "${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"/images/*.jsonl
+   ls -l "${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}"/images/*.jsonl
    ```
 
 3. Open the carousel:
@@ -139,7 +139,7 @@ carousel still uses the `tmux-claude-images` binary from Step 1.
 
 | Variable | Purpose |
 |---|---|
-| `AGENT_CAROUSEL_BIN` | Override the viewer binary the toggle launches (default: `agent-carousel` on PATH). |
-| `AGENT_CAROUSEL_DIR` | State dir for manifests. Falls back to `CLAUDE_STATUS_DIR`, then `/tmp/claude-status`. |
+| `AEYE_BIN` | Override the viewer binary the toggle launches (default: `aeye` on PATH). |
+| `AEYE_DIR` | State dir for manifests. Falls back to `CLAUDE_STATUS_DIR`, then `/tmp/claude-status`. |
 | `CLAUDE_STATUS_DIR` | Secondary state-dir fallback (shared with claude-status tooling). |
-| `AGENT_CAROUSEL_D2` / `AGENT_CAROUSEL_RESVG` | Override the `d2` / `resvg` binaries used for diagram rendering. |
+| `AEYE_D2` / `AEYE_RESVG` | Override the `d2` / `resvg` binaries used for diagram rendering. |

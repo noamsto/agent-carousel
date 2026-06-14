@@ -1,5 +1,5 @@
 {
-  description = "agent-carousel — a tmux/kitty image carousel for coding agents.";
+  description = "aeye — a tmux/kitty image carousel for coding agents.";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -37,11 +37,11 @@
 
         devShells.default = pkgs.mkShell {
           inherit (config.pre-commit) shellHook;
-          AGENT_CAROUSEL_D2_FONT = "Source Sans 3";
+          AEYE_D2_FONT = "Source Sans 3";
           # truetype/ = static Regular/Bold/Italic faces only; the parent dir also
           # ships variable/ (same family name), which makes resvg's bold/italic
           # face selection ambiguous. Keep it narrow.
-          AGENT_CAROUSEL_D2_FONT_DIR = "${pkgs.source-sans}/share/fonts/truetype";
+          AEYE_D2_FONT_DIR = "${pkgs.source-sans}/share/fonts/truetype";
           packages =
             config.pre-commit.settings.enabledPackages
             ++ [pkgs.go pkgs.gopls pkgs.gotools pkgs.golangci-lint pkgs.chafa pkgs.bats pkgs.goreleaser pkgs.gh pkgs.d2 pkgs.resvg pkgs.source-sans pkgs.source-code-pro];
@@ -49,20 +49,20 @@
 
         packages = {
           default = pkgs.buildGoModule {
-            pname = "agent-carousel";
+            pname = "aeye";
             version = "0.1.0";
             src = ./.;
             vendorHash = "sha256-G0x4z/zFDK578yJBLUD555wBQ9quUyLeO5bKEZewCC4=";
             doCheck = true;
             meta = {
               description = "tmux/kitty image carousel for coding agents";
-              mainProgram = "agent-carousel";
+              mainProgram = "aeye";
               license = lib.licenses.mit;
             };
           };
 
-          # The dual-mode toggle. runtimeInputs puts `agent-carousel` on PATH,
-          # which the script invokes by default (AGENT_CAROUSEL_BIN override).
+          # The dual-mode toggle. runtimeInputs puts `aeye` on PATH,
+          # which the script invokes by default (AEYE_BIN override).
           toggle = pkgs.writeShellApplication {
             name = "tmux-claude-images";
             runtimeInputs = [self'.packages.default];
@@ -73,9 +73,9 @@
           # baked onto PATH (plus jq/coreutils, and the toggle for --ensure-open),
           # so nix consumers get diagrams without d2/resvg in their environment.
           # Non-nix users run the plugin's scripts/diagrams.sh with their own
-          # d2/resvg on PATH (or via AGENT_CAROUSEL_D2 / AGENT_CAROUSEL_RESVG).
+          # d2/resvg on PATH (or via AEYE_D2 / AEYE_RESVG).
           diagrams = pkgs.writeShellApplication {
-            name = "agent-carousel-diagrams";
+            name = "aeye-diagrams";
             runtimeInputs = [self'.packages.toggle pkgs.d2 pkgs.resvg pkgs.jq pkgs.coreutils];
             text = builtins.readFile ./adapters/claude-code/plugin/scripts/diagrams.sh;
           };
@@ -83,7 +83,7 @@
 
         apps.default = {
           type = "app";
-          program = "${self'.packages.default}/bin/agent-carousel";
+          program = "${self'.packages.default}/bin/aeye";
         };
       };
     };

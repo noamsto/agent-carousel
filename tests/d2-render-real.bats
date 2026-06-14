@@ -18,8 +18,8 @@ setup() {
 
 	# Prefer the hermetic bundle when the env points at one; else system fonts.
 	args=()
-	if [[ -n ${AGENT_CAROUSEL_D2_FONT_DIR:-} ]]; then
-		args=(--skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR")
+	if [[ -n ${AEYE_D2_FONT_DIR:-} ]]; then
+		args=(--skip-system-fonts --use-fonts-dir "$AEYE_D2_FONT_DIR")
 	fi
 	run bash -c 'resvg "$@" 2>&1' _ "${args[@]}" "$SVG" "$BATS_TEST_TMPDIR/out.png"
 	[ "$status" -eq 0 ] || {

@@ -1,7 +1,7 @@
 # Manifest contract
 
 The viewer reads a per-key manifest at
-`${AGENT_CAROUSEL_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<key>.jsonl`.
+`${AEYE_DIR:-${CLAUDE_STATUS_DIR:-/tmp/claude-status}}/images/<key>.jsonl`.
 
 - `<key>` is a tmux pane id with the leading `%` stripped, **or** a coding-agent
   session id (e.g. `$CLAUDE_CODE_SESSION_ID`) — whichever the capture adapter

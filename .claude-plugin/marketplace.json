@@ -1,9 +1,9 @@
 {
-  "name": "agent-carousel",
+  "name": "aeye",
   "owner": {"name": "noamsto"},
   "plugins": [
     {
-      "name": "agent-carousel",
+      "name": "aeye",
       "source": "./adapters/claude-code/plugin",
       "description": "Image carousel for coding agents (Claude Code capture adapter)."
     }

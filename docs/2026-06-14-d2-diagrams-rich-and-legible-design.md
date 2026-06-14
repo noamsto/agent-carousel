@@ -1,4 +1,4 @@
-# agent-carousel: rich, legible D2 diagrams
+# aeye: rich, legible D2 diagrams
 
 ## Summary
 
@@ -38,7 +38,7 @@ phases, each with its own implementation plan.
 ## Phase 0 — Fix the render pipeline (live bug, highest priority)
 
 Without text, nothing downstream matters. Scope is `diagrams.sh`, the nix font
-packaging (bundle + `AGENT_CAROUSEL_D2_FONT_DIR`), and a regression test.
+packaging (bundle + `AEYE_D2_FONT_DIR`), and a regression test.
 
 ### Text rendering
 
@@ -55,7 +55,7 @@ documents its defaults as **Source Sans 3** (regular/bold/italic/semibold) +
 git**. The nix wrapper exports the font dir; the hook renders hermetically:
 
 ```sh
-resvg --skip-system-fonts --use-fonts-dir "$AGENT_CAROUSEL_D2_FONT_DIR" ...
+resvg --skip-system-fonts --use-fonts-dir "$AEYE_D2_FONT_DIR" ...
 ```
 
 **Remap the synthetic names** so the text points at the bundled family:
@@ -71,8 +71,8 @@ anchored to the `-font-<style>` suffix, so it rewrites only the 6 font
 references and leaves the ~116 other `d2-<id>` class references untouched.
 
 Non-nix consumers (the plugin can run outside nix): when
-`AGENT_CAROUSEL_D2_FONT_DIR` is unset, fall back to remapping to a system family
-(`AGENT_CAROUSEL_D2_FONT`, default `Noto Sans`) with system fonts enabled.
+`AEYE_D2_FONT_DIR` is unset, fall back to remapping to a system family
+(`AEYE_D2_FONT`, default `Noto Sans`) with system fonts enabled.
 
 ### Bold / italic fidelity
 
@@ -101,7 +101,7 @@ A PNG is a fixed render, so the theme is chosen when the hook renders:
 | dark | `200` Dark Mauve |
 | light | `105` Buttered Toast |
 
-Overridable via `AGENT_CAROUSEL_D2_THEME` / `AGENT_CAROUSEL_D2_DARK_THEME`.
+Overridable via `AEYE_D2_THEME` / `AEYE_D2_DARK_THEME`.
 Mode is read from a configurable signal (env first; no fragile terminal
 auto-detection — define the error out of existence). `--sketch` is on by
 default, overridable.
@@ -181,7 +181,7 @@ theme. Picked in the Phase 1 plan; flagged here so it isn't discovered late.
 - Renderers absent → hook no-ops silently (unchanged).
 - Font unavailable → mostly *defined out of existence*: the nix build pins the
   bundled font dir, so it is always present on nix hosts. Off-nix, fall back to
-  a system family (`AGENT_CAROUSEL_D2_FONT`, default `Noto Sans`).
+  a system family (`AEYE_D2_FONT`, default `Noto Sans`).
 - Unknown/garbled mode signal → fall back to light defaults; never crash.
 
 ## Files
@@ -189,7 +189,7 @@ theme. Picked in the Phase 1 plan; flagged here so it isn't discovered late.
 | File | Change |
 |---|---|
 | `adapters/claude-code/plugin/scripts/diagrams.sh` | Phase 0: font remap + hermetic `--use-fonts-dir`, bold/italic CSS rewrite, theme-by-mode + env overrides, sketch default |
-| `flake.nix` / nix wrapper | Phase 0: add `source-sans` + `source-code-pro` deps; export `AGENT_CAROUSEL_D2_FONT_DIR` to the hook |
+| `flake.nix` / nix wrapper | Phase 0: add `source-sans` + `source-code-pro` deps; export `AEYE_D2_FONT_DIR` to the hook |
 | `tests/diagrams.bats` | Phase 0: zero-`No match` regression test; Phase 1: render-test each skill example |
 | `adapters/claude-code/plugin/skills/diagrams/SKILL.md` | Phase 1: full rewrite (rich + beautiful + flow direction) |
 | `gallery.go`, `gallery_render.go`, `gallery_cache.go` | Phase 2: zoom/pan, maximize, upscale, dedup (extends zoom-pan plan; coordinate with the in-flight `feat/carousel-staleness-window-fixes` work) |

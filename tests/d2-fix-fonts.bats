@@ -4,7 +4,7 @@ setup() {
 	APP="$(dirname "$BATS_TEST_DIRNAME")/adapters/claude-code/plugin/scripts/d2-fix-fonts.sh"
 	SVG="$BATS_TEST_TMPDIR/s.svg"
 	cp "$BATS_TEST_DIRNAME/fixtures/d2-fonts-sample.svg" "$SVG"
-	unset AGENT_CAROUSEL_D2_FONT
+	unset AEYE_D2_FONT
 }
 
 @test "removes every synthetic d2 font-family name" {
@@ -19,8 +19,8 @@ setup() {
 	[ "$output" -ge 1 ]
 }
 
-@test "honors AGENT_CAROUSEL_D2_FONT override" {
-	AGENT_CAROUSEL_D2_FONT="Source Sans 3" bash "$APP" "$SVG"
+@test "honors AEYE_D2_FONT override" {
+	AEYE_D2_FONT="Source Sans 3" bash "$APP" "$SVG"
 	run grep -c 'Source Sans 3' "$SVG"
 	[ "$output" -ge 1 ]
 }
