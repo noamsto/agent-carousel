@@ -378,7 +378,11 @@ func runGallery(pane string) error {
 		mtime:   manifestMtime(pane),
 		cursor:  max(0, len(images)-1),
 		pinned:  true,
+		crop:    fullCrop(),
 	}
+	// Decode the initial selection now so zoom works on the first keystroke
+	// (otherwise curImg is nil until the first refresh tick).
+	m.ensureDecoded()
 	// Resolve theme colors once (each is a tmux subprocess; don't do it per frame).
 	m.selColor = m.thmColor("@thm_mauve", "#cba6f7", "#8839ef")
 	m.dimColor = m.thmColor("@thm_surface_1", "#45475a", "#bcc0cc")
