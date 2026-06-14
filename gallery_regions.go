@@ -131,8 +131,16 @@ func groupBBox(frag string) (minX, minY, maxX, maxY float64, ok bool) {
 			maxY = d
 		}
 	}
-	for _, m := range svgDAttrRe.FindAllStringSubmatch(frag, -1) {
-		a, b, c, d, has := pathBBox(m[1])
+	for _, tag := range pathElemRe.FindAllString(frag, -1) {
+		dm := svgDAttrRe.FindStringSubmatch(tag)
+		if dm == nil {
+			continue
+		}
+		a, b, c, d, has := pathBBox(dm[1])
+		if has {
+			tx, ty := translateOf(tag)
+			a, b, c, d = a+tx, b+ty, c+tx, d+ty
+		}
 		merge(a, b, c, d, has)
 	}
 	merge(rectBBox(frag))
@@ -142,8 +150,25 @@ func groupBBox(frag string) (minX, minY, maxX, maxY float64, ok bool) {
 var (
 	rectElemRe    = regexp.MustCompile(`<rect\b([^>]*)>`)
 	ellipseElemRe = regexp.MustCompile(`<(?:ellipse|circle)\b([^>]*)>`)
+	pathElemRe    = regexp.MustCompile(`<path\b[^>]*>`)
 	numAttrRe     = regexp.MustCompile(`\b([\w-]+)="(-?[\d.]+)"`)
+	translateRe   = regexp.MustCompile(`translate\(\s*(-?[\d.]+)(?:[ ,]+(-?[\d.]+))?`)
 )
+
+// translateOf reads translate(tx[,ty]) from an element's tag. d2 positions most
+// node shapes with local path coords + a translate; the cylinder uses absolute
+// coords + no transform. Defaulting to (0,0) handles both.
+func translateOf(tag string) (tx, ty float64) {
+	m := translateRe.FindStringSubmatch(tag)
+	if m == nil {
+		return 0, 0
+	}
+	tx, _ = strconv.ParseFloat(m[1], 64)
+	if m[2] != "" {
+		ty, _ = strconv.ParseFloat(m[2], 64)
+	}
+	return
+}
 
 // parseAttrs returns a map of attribute name → float64 for a tag's attribute string.
 func parseAttrs(attrs string) map[string]float64 {
@@ -179,7 +204,8 @@ func rectBBox(frag string) (minX, minY, maxX, maxY float64, ok bool) {
 	for _, m := range rectElemRe.FindAllStringSubmatch(frag, -1) {
 		a := parseAttrs(m[1])
 		if _, hasX := a["x"]; hasX {
-			merge(a["x"], a["y"], a["x"]+a["width"], a["y"]+a["height"])
+			tx, ty := translateOf(m[0])
+			merge(a["x"]+tx, a["y"]+ty, a["x"]+a["width"]+tx, a["y"]+a["height"]+ty)
 		}
 	}
 	for _, m := range ellipseElemRe.FindAllStringSubmatch(frag, -1) {
@@ -193,7 +219,8 @@ func rectBBox(frag string) (minX, minY, maxX, maxY float64, ok bool) {
 			if ry == 0 {
 				ry = rx
 			}
-			merge(a["cx"]-rx, a["cy"]-ry, a["cx"]+rx, a["cy"]+ry)
+			tx, ty := translateOf(m[0])
+			merge(a["cx"]-rx+tx, a["cy"]-ry+ty, a["cx"]+rx+tx, a["cy"]+ry+ty)
 		}
 	}
 	if !ok {
