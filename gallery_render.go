@@ -4,9 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 // imageEntry is one line of the images/<pane>.jsonl manifest (shared format
@@ -47,13 +51,65 @@ func manifestPath(pane string) string {
 	return dir + "/images/" + strings.TrimPrefix(pane, "%") + ".jsonl"
 }
 
-// loadManifest reads and parses the pane's image manifest.
+// loadManifest reads and parses the pane's image manifest, dropping entries
+// that don't decode as an image so neither a deleted file nor a truncated stub
+// (e.g. a failed diagram render that left a few bytes on disk) renders as a
+// blank cell. A path that becomes valid later is picked up on the next reload.
 func loadManifest(pane string) []imageEntry {
 	data, err := os.ReadFile(manifestPath(pane))
 	if err != nil {
 		return nil
 	}
-	return parseManifest(data)
+	entries := parseManifest(data)
+	out := entries[:0]
+	for _, e := range entries {
+		if err := decodeErr(e.Path); err != nil {
+			logDropped(pane, e.Path, err)
+			continue
+		}
+		out = append(out, e)
+	}
+	return out
+}
+
+// decodeErr returns nil if path's header decodes as a registered image format.
+// DecodeConfig reads only the header (cheap), so this validates every manifest
+// entry on load without paying a full decode.
+func decodeErr(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, _, err = image.DecodeConfig(f)
+	return err
+}
+
+// dropped tracks paths already logged this process so a stale entry isn't
+// re-logged on every reload — each new image bumps the manifest mtime, which
+// re-checks the whole list.
+var dropped = struct {
+	sync.Mutex
+	seen map[string]bool
+}{seen: map[string]bool{}}
+
+// logDropped records, once per path per process, why a manifest entry was
+// skipped — observability for "where did my image go?" without cluttering the
+// carousel. Best-effort: a log we can't write isn't worth failing a reload.
+func logDropped(pane, path string, reason error) {
+	dropped.Lock()
+	defer dropped.Unlock()
+	if dropped.seen[path] {
+		return
+	}
+	dropped.seen[path] = true
+	logPath := filepath.Join(filepath.Dir(manifestPath(pane)), "dropped.log")
+	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	fmt.Fprintf(f, "%s\t%s\t%s\n", time.Now().Format(time.RFC3339), path, reason)
 }
 
 type gridBackend int

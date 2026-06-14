@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestTmuxPassthrough(t *testing.T) {
 	t.Setenv("TMUX", "")
@@ -147,5 +152,42 @@ not json
 	}
 	if got[2].Path != "/c/three.png" {
 		t.Errorf("entry 2 = %+v", got[2])
+	}
+}
+
+func TestLoadManifestDropsUndecodableFiles(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("AGENT_CAROUSEL_DIR", dir)
+	if err := os.MkdirAll(filepath.Join(dir, "images"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	live := filepath.Join(dir, "live.png")
+	writeTestImage(t, live, 4, 4)
+	// A 3-byte "PNG" stub: exists on disk but doesn't decode (a failed render).
+	stub := filepath.Join(dir, "stub.png")
+	if err := os.WriteFile(stub, []byte("PNG"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	manifest := filepath.Join(dir, "images", "p1.jsonl")
+	lines := `{"type":"image","path":"` + live + `","source":"Read","mtime":1}
+{"type":"image","path":"` + stub + `","source":"d2","mtime":2}
+{"type":"image","path":"` + filepath.Join(dir, "gone.png") + `","source":"Write","mtime":3}
+`
+	if err := os.WriteFile(manifest, []byte(lines), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got := loadManifest("p1")
+	if len(got) != 1 || got[0].Path != live {
+		t.Fatalf("loadManifest = %+v, want only the decodable file %q", got, live)
+	}
+
+	log, err := os.ReadFile(filepath.Join(dir, "images", "dropped.log"))
+	if err != nil {
+		t.Fatalf("dropped.log not written: %v", err)
+	}
+	for _, want := range []string{stub, filepath.Join(dir, "gone.png")} {
+		if !strings.Contains(string(log), want) {
+			t.Errorf("dropped.log missing %q:\n%s", want, log)
+		}
 	}
 }
