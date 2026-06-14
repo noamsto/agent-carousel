@@ -330,8 +330,11 @@ func (m galleryModel) renderView() string {
 		lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 
 	// Centered key hints at the bottom.
-	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(
-		"↵/o open · O folder · h/l move · n/p page · g/G first/last · q quit"))
+	hint := "↵/o open · O folder · h/l move · n/p page · g/G first/last · z/Z zoom · q quit"
+	if !m.crop.isFull() {
+		hint = "←↑↓→ pan · z/Z zoom · 0 reset · h/l move · q quit"
+	}
+	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(hint))
 
 	return lipgloss.JoinVertical(lipgloss.Left, title, subtitle, previewArea, filmstrip, hints)
 }
