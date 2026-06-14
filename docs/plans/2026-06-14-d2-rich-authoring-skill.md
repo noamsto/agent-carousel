@@ -125,7 +125,12 @@ git commit -m "test(diagrams): render-test every d2 example in the skill"
 
 This is a writing-craft task — keep one coherent voice, lean prose, and make every example beautiful *and* renderable. Target ~250–350 lines.
 
-**Critical authoring constraint (the harness enforces it):** every ```d2 fenced block must be a **complete, self-contained, compilable single-board diagram** — the Task 1 harness renders all of them. This is a feature, not a burden: it makes examples copy-paste-ready. For a one-liner that needs context (e.g. an FK edge), include the minimal surrounding declarations so it compiles. For non-runnable syntax notes (e.g. "connections: `->` directed"), use inline code (backticks) or a non-`d2` fence, NOT a ```d2 block. A bare `vars`+`classes` header compiles (empty diagram is valid), so the house-style header block is fine as ```d2.
+**Critical authoring constraint (the harness enforces it):** every ```d2 fenced block must be a **complete, self-contained, compilable single-board diagram with at least one shape** — the Task 1 harness renders all of them. This is a feature, not a burden: it makes examples copy-paste-ready. Verified rules (checked against d2 0.7.x):
+
+- For a one-liner that needs context (e.g. an FK edge), include the minimal surrounding declarations so it compiles.
+- For non-runnable syntax notes (e.g. "connections: `->` directed"), use inline code (backticks) or a non-`d2` fence (e.g. ```text), NOT a ```d2 block.
+- **A bare `vars`+`classes` block with NO shapes does NOT produce an SVG** (verified — d2 emits no board) and would fail the harness. So show the house-style header as a ```text template, OR fold it into a complete example that also has shapes. Do NOT present it as a standalone ```d2 block.
+- **`icon:` URLs are fetched at compile time (network).** To keep the harness offline-deterministic, show `icon:` syntax in a ```text/inline snippet, NOT in a render-tested ```d2 block. (If an icon example must be ```d2, the harness will hit the network — avoid.)
 
 - [ ] **Step 1: Write the new SKILL.md**
 
@@ -136,7 +141,7 @@ Replace the file with these sections (keep frontmatter `name: diagrams`; sharpen
 1. **Frontmatter** — `name: diagrams`; description covering when to draw + that it produces beautiful, legible D2.
 2. **When to draw / when not** — keep the existing judgment (architecture, data flow, state machines, pipelines, ERDs; not trivial/linear; one diagram per concept; prose stays primary), compressed.
 3. **Where to write** — keep (scratch dir from SessionStart guidance; never write `.d2` into the project), compressed.
-4. **House style (beautiful-by-default)** — the copy-paste header every diagram starts with, and the role classes. The hook sets the theme by light/dark mode, so the file sets only sketch + spacing:
+4. **House style (beautiful-by-default)** — the copy-paste header every diagram starts with, and the role classes. The hook sets the theme by light/dark mode, so the file sets only sketch + spacing. **Show this header in a ```text fence (it has no shapes, so it won't render standalone — see the authoring constraint above); the worked examples in §8 then demonstrate it applied with real shapes.**
    ```d2
    vars: {
      d2-config: {
@@ -178,7 +183,7 @@ Replace the file with these sections (keep frontmatter `name: diagrams`; sharpen
      bob -> alice: response
      ```
    - **Classes** — `classes: { ... }` + `thing: { class: svc }` (defined in the house-style header).
-   - **Icons** — `node: { icon: https://icons.terrastruct.com/...; shape: image }` (or `icon:` on a normal shape). Note: icon URLs are fetched at render; omit when offline.
+   - **Icons** — `node: { icon: https://icons.terrastruct.com/...; shape: image }` (or `icon:` on a normal shape). Show this in a ```text/inline snippet, NOT a ```d2 block — icon URLs are fetched at d2 compile time (network), which would make the render-test flaky offline. Keep icons out of the render-tested worked examples.
    - **Styling vocab** — `style`: `stroke`, `stroke-width`, `stroke-dash`, `border-radius`, `shadow`, `font-color`, `fill` (use sparingly — see house style); connection styling (`style.stroke-dash`, label on edge).
    - **`near` for legends/captions** — `note: |md ... |\nnote.near: bottom-center`.
 8. **Worked examples (3–4, each beautiful, copy-paste-ready, single-board, render-tested):**
