@@ -3,10 +3,14 @@ package main
 import (
 	"crypto/sha1"
 	"fmt"
+	"image"
 	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	tea "charm.land/bubbletea/v2"
+	"golang.org/x/image/draw"
 )
 
 // vectorTargetW is the width to rasterize the whole SVG canvas at so the kept
@@ -50,4 +54,62 @@ func renderVector(vector string, targetW int) string {
 		return ""
 	}
 	return out
+}
+
+// vectorReadyMsg carries a finished vector raster back to Update. vector/targetW
+// identify which request it answers, so a stale render (the selection or zoom
+// moved on while resvg ran) is ignored.
+type vectorReadyMsg struct {
+	vector  string
+	targetW int
+	raster  image.Image
+}
+
+// renderVectorCmd rasterizes off the event loop (resvg subprocess) and decodes
+// the result, so the TUI never blocks on a render. Returns nil on any failure.
+func renderVectorCmd(vector string, targetW int) tea.Cmd {
+	return func() tea.Msg {
+		out := renderVector(vector, targetW)
+		if out == "" {
+			return nil
+		}
+		f, err := os.Open(out)
+		if err != nil {
+			return nil
+		}
+		defer f.Close()
+		img, _, err := image.Decode(f)
+		if err != nil {
+			return nil
+		}
+		return vectorReadyMsg{vector: vector, targetW: targetW, raster: img}
+	}
+}
+
+// curVector returns the selected entry's vector source path, or "" if it has none.
+func (m *galleryModel) curVector() string {
+	if len(m.images) == 0 {
+		return ""
+	}
+	return m.images[m.cursor].Vector
+}
+
+// kickVector returns the async render cmd for the current d2 selection at the
+// current zoom, or nil when there is nothing to sharpen (no vector / not kitty).
+func (m *galleryModel) kickVector() tea.Cmd {
+	v := m.curVector()
+	if v == "" || m.backend != backendKitty {
+		return nil
+	}
+	return renderVectorCmd(v, vectorTargetW(m.l.previewW*cellPxW, m.l.previewH*cellPxH, m.crop))
+}
+
+// fitToBox scales src to fit tw×th preserving aspect, upscaling if smaller — the
+// rest-state path for small diagrams (vector has no upscale ceiling).
+func fitToBox(src image.Image, tw, th int) image.Image {
+	b := src.Bounds()
+	scale := min(float64(tw)/float64(b.Dx()), float64(th)/float64(b.Dy()))
+	dst := image.NewRGBA(image.Rect(0, 0, int(float64(b.Dx())*scale), int(float64(b.Dy())*scale)))
+	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), src, b, draw.Src, nil)
+	return dst
 }
