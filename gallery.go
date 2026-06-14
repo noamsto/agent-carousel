@@ -224,6 +224,18 @@ func (m galleryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "0":
 			m.resetZoom()
 			m.transmitPreviewOnly()
+		case "alt+h":
+			m.panBy(-0.1, 0)
+			m.transmitPreviewOnly()
+		case "alt+l":
+			m.panBy(0.1, 0)
+			m.transmitPreviewOnly()
+		case "alt+k":
+			m.panBy(0, -0.1)
+			m.transmitPreviewOnly()
+		case "alt+j":
+			m.panBy(0, 0.1)
+			m.transmitPreviewOnly()
 		case "n":
 			m.selectIndex(m.cursor + m.l.stripCols)
 		case "p":
@@ -332,7 +344,7 @@ func (m galleryModel) renderView() string {
 	// Centered key hints at the bottom.
 	hint := "↵/o open · O folder · h/l move · n/p page · g/G first/last · z/Z zoom · q quit"
 	if !m.crop.isFull() {
-		hint = "←↑↓→ pan · z/Z zoom · 0 reset · h/l move · q quit"
+		hint = "←↑↓→/⌥hjkl pan · z/Z zoom · 0 reset · q quit"
 	}
 	hints := center(lipgloss.NewStyle().Foreground(hintFg).Render(hint))
 
