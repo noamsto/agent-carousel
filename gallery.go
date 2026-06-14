@@ -81,18 +81,18 @@ func stripStart(cursor, stripCols, n int) int {
 // ---------------------------------------------------------------------------
 
 type galleryModel struct {
-	pane    string
-	images  []imageEntry
-	backend gridBackend
-	theme   string
-	l       layout
-	cursor  int // selected image index
-	width   int
-	height  int
-	tty     *os.File // raw graphics sink (bypasses bubbletea's stdout)
-	mtime   int64    // manifest mtime at last load (for auto-refresh)
-	ready   bool
-	pinned  bool // follow the newest image until the user first navigates
+	pane       string
+	images     []imageEntry
+	backend    gridBackend
+	theme      string
+	l          layout
+	cursor     int // selected image index
+	width      int
+	height     int
+	tty        *os.File // raw graphics sink (bypasses bubbletea's stdout)
+	mtime      int64    // manifest mtime at last load (for auto-refresh)
+	ready      bool
+	pinned     bool        // follow the newest image until the user first navigates
 	crop       cropFrac    // visible sub-rectangle of the source (fullCrop = fit)
 	curImg     image.Image // decoded source of the current selection
 	curImgPath string      // path curImg was decoded from
